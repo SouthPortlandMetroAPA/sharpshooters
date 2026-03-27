@@ -1072,85 +1072,125 @@
         var _pageStart = performance.now();
         console.log('[TIMING] DOMContentLoaded fired at ' + Math.round(_pageStart) + 'ms');
 
-        // ── Maintenance mode check ──────────────────────────────────
-        try {
-          var _mStart = performance.now();
-          console.log('[TIMING] Maintenance check START');
-          var maintResp = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'getMaintenanceMode' }),
-            redirect: 'follow'
-          }).then(function(r) { return r.json(); });
-          console.log('[TIMING] Maintenance check DONE (' + Math.round(performance.now() - _mStart) + 'ms)');
+        // ── Fire ALL initial API calls in parallel ──────────────────
+        // Maintenance + options + league leaders + auto-lookup all at once.
+        // This reduces total wait from sum-of-all to max-of-all.
+        var maintPromise = callServer('getMaintenanceMode').catch(function() { return { success: false }; });
+        var optionsPromise = callServer('getLeaderboardOptions', { sessionIndex: '0' });
+        var leadersPromise = callServer('getLeagueLeaders', { sessionIndex: '0' });
+        var savedInput = null;
+        try { savedInput = sessionStorage.getItem("sharpshooters_lastInput"); } catch(e) {}
+        var lookupPromise = savedInput ? callServer('lookupPlayer', { input: savedInput }) : Promise.resolve(null);
 
-          if (maintResp.success && maintResp.enabled) {
-            var urlParams = new URLSearchParams(window.location.search);
-            var bypassKey = urlParams.get('key') || '';
-            if (bypassKey !== maintResp.bypassKey) {
-              // Show maintenance page and halt
-              document.body.innerHTML = '';
-              document.body.style.cssText = 'margin:0;padding:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100svh;font-family:system-ui,-apple-system,sans-serif;';
-              var box = document.createElement('div');
-              box.style.cssText = 'text-align:center;padding:48px 24px;max-width:500px;';
-              box.innerHTML = '<div style="font-size:48px;font-weight:900;font-style:italic;color:#ea002a;line-height:1.1;margin-bottom:24px;">SharpShooters</div>'
-                + '<div style="font-size:20px;font-weight:600;color:#0031a1;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:16px;">Under Maintenance</div>'
-                + '<div style="font-size:15px;color:#888;line-height:1.6;">We\'re making improvements.<br>Check back shortly.</div>';
-              document.body.appendChild(box);
-              document.body.style.visibility = 'visible';
-              return; // Stop all further initialization
-            }
+        loadSessions();
+
+        // ── Wait for maintenance check first (gate) ─────────────────
+        var maintResp = await maintPromise;
+        console.log('[TIMING] Maintenance check DONE (' + Math.round(performance.now() - _pageStart) + 'ms)');
+
+        if (maintResp && maintResp.success && maintResp.enabled) {
+          var urlParams = new URLSearchParams(window.location.search);
+          var bypassKey = urlParams.get('key') || '';
+          if (bypassKey !== maintResp.bypassKey) {
+            document.body.innerHTML = '';
+            document.body.style.cssText = 'margin:0;padding:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100svh;font-family:system-ui,-apple-system,sans-serif;';
+            var box = document.createElement('div');
+            box.style.cssText = 'text-align:center;padding:48px 24px;max-width:500px;';
+            box.innerHTML = '<div style="font-size:48px;font-weight:900;font-style:italic;color:#ea002a;line-height:1.1;margin-bottom:24px;">SharpShooters</div>'
+              + '<div style="font-size:20px;font-weight:600;color:#0031a1;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:16px;">Under Maintenance</div>'
+              + '<div style="font-size:15px;color:#888;line-height:1.6;">We\'re making improvements.<br>Check back shortly.</div>';
+            document.body.appendChild(box);
+            document.body.style.visibility = 'visible';
+            return;
           }
-        } catch (e) {
-          // Fail open - don't block users if maintenance check fails
         }
 
-        // ── Maintenance check passed - reveal the page ──────────────
+        // ── Reveal page ─────────────────────────────────────────────
         document.body.style.visibility = 'visible';
-        var _t0 = performance.now();
-        console.log('[TIMING] Page revealed at ' + Math.round(_t0) + 'ms');
+        console.log('[TIMING] Page revealed at ' + Math.round(performance.now() - _pageStart) + 'ms');
 
-        document.getElementById("scopeBtn")
-          .addEventListener("click", toggleScopeList);
-
+        document.getElementById("scopeBtn").addEventListener("click", toggleScopeList);
         document.addEventListener("click", function (e) {
           var picker = document.getElementById("scopePicker");
           if (!picker.contains(e.target)) closeScopeList();
         });
-
-        document.getElementById("sessionSelect")
-          .addEventListener("change", loadOptionsAndDefault);
-
-        // Wire up lookup form
+        document.getElementById("sessionSelect").addEventListener("change", loadOptionsAndDefault);
         document.getElementById("lookupForm").addEventListener("submit", function(e) {
           e.preventDefault();
           handleLookup();
         });
 
-        var _t1 = performance.now();
-        console.log('[TIMING] Starting loadSessions at ' + Math.round(_t1) + 'ms (delta: ' + Math.round(_t1 - _t0) + 'ms)');
-        loadSessions();
-
-        var _t2 = performance.now();
-        console.log('[TIMING] Starting loadOptionsAndDefault at ' + Math.round(_t2) + 'ms (delta: ' + Math.round(_t2 - _t1) + 'ms)');
-        await loadOptionsAndDefault();
-        var _t3 = performance.now();
-        console.log('[TIMING] loadOptionsAndDefault DONE at ' + Math.round(_t3) + 'ms (took: ' + Math.round(_t3 - _t2) + 'ms)');
-
-        // Auto-lookup from sessionStorage
+        // ── Process options (already in flight) ─────────────────────
         try {
-          var saved = sessionStorage.getItem("sharpshooters_lastInput");
-          if (saved) {
-            var _t4 = performance.now();
-            console.log('[TIMING] Starting auto-lookup at ' + Math.round(_t4) + 'ms');
-            document.getElementById("lookupInput").value = saved;
-            await handleLookup();
-            var _t5 = performance.now();
-            console.log('[TIMING] Auto-lookup DONE at ' + Math.round(_t5) + 'ms (took: ' + Math.round(_t5 - _t4) + 'ms)');
+          var optData = await optionsPromise;
+          console.log('[TIMING] Options DONE (' + Math.round(performance.now() - _pageStart) + 'ms)');
+          if (optData && optData.success !== false) {
+            scopeOptions = optData.options || [];
+            scopeValue = "League Leaders";
+            var defaultOpt = scopeOptions[0] || { line1: "", line2: "League Leaders" };
+            updateScopeBtn(defaultOpt);
           }
-        } catch(e) {}
+        } catch (e) {
+          showMessage("error", "Failed to load division options.");
+        }
 
-        console.log('[TIMING] Total init: ' + Math.round(performance.now() - _t0) + 'ms');
+        // ── Process league leaders (already in flight) ──────────────
+        try {
+          var leadersData = await leadersPromise;
+          console.log('[TIMING] Leaders DONE (' + Math.round(performance.now() - _pageStart) + 'ms)');
+          showMessage(null, "");
+          renderLeaderboard(leadersData);
+        } catch (e) {
+          showMessage("error", "Failed to load leaderboard.");
+        }
+
+        // ── Process auto-lookup (already in flight) ─────────────────
+        if (savedInput) {
+          try {
+            document.getElementById("lookupInput").value = savedInput;
+            var lookupData = await lookupPromise;
+            console.log('[TIMING] Auto-lookup DONE (' + Math.round(performance.now() - _pageStart) + 'ms)');
+            if (lookupData && lookupData.success && lookupData.found) {
+              var statusEl = document.getElementById("lookupStatus");
+              statusEl.textContent = "";
+              var nameEl = document.getElementById("playerName");
+              nameEl.textContent = lookupData.player.firstName + " " + lookupData.player.lastName;
+              nameEl.style.display = "block";
+
+              var pillsEl = document.getElementById("teamPills");
+              pillsEl.innerHTML = "";
+              pillsEl.style.display = "flex";
+
+              var seen = {};
+              var teams = lookupData.teams || [];
+              for (var t = 0; t < teams.length; t++) {
+                var team = teams[t];
+                var baseName = team.divisionName.replace(/\s*(8[- ]?Ball|9[- ]?Ball)\s*(Open)?$/i, "").trim();
+                if (!baseName) baseName = team.divisionName;
+                if (seen[baseName]) continue;
+                seen[baseName] = true;
+
+                var pill = document.createElement("span");
+                pill.className = "team-pill";
+                pill.textContent = team.teamName;
+                pill.dataset.divName = baseName;
+                pill.addEventListener("click", (function(name) {
+                  return function() {
+                    scopeValue = name;
+                    var matchOpt = scopeOptions.find(function(o) { return o.value === name; });
+                    if (matchOpt) updateScopeBtn(matchOpt);
+                    else updateScopeBtn({ line1: "", line2: name });
+                    loadLeaderboardForSelection();
+                  };
+                })(baseName));
+                pillsEl.appendChild(pill);
+              }
+              document.getElementById("browseLink").style.display = "block";
+            }
+          } catch (e) { /* non-fatal */ }
+        }
+
+        console.log('[TIMING] Total init: ' + Math.round(performance.now() - _pageStart) + 'ms');
       });
     </script>
   </body>
