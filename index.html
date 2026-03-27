@@ -88,6 +88,63 @@
         opacity: 0.9;
       }
 
+      /* ── Lookup Bar (Playoffs-style) ── */
+      .lookup-bar {
+        display: flex;
+        align-items: center;
+        max-width: 480px;
+        margin: 0 auto 12px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 4px 4px 4px 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      }
+      .lookup-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 1rem;
+        font-family: inherit;
+        background: transparent;
+        color: var(--text);
+        min-width: 0;
+      }
+      .lookup-input::placeholder { color: var(--muted); }
+      .lookup-btn {
+        flex-shrink: 0;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, var(--spm-primary), var(--spm-accent));
+        color: #fff;
+        font-weight: 800;
+        font-size: 0.9rem;
+        cursor: pointer;
+        letter-spacing: 0.05em;
+        font-family: inherit;
+      }
+      .lookup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      /* ── Team Pills ── */
+      .team-pill {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--spm-primary), var(--spm-accent));
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        transition: transform 0.15s, box-shadow 0.15s;
+        text-decoration: none;
+      }
+      .team-pill:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      }
+
       /* ── Controls Card ── */
 
       .controls-card {
@@ -564,7 +621,17 @@
         <div class="header-status" id="statusText"></div>
       </header>
 
-      <div class="controls-card">
+      <!-- ── Player Lookup Bar ── -->
+      <form class="lookup-bar" id="lookupForm" autocomplete="off">
+        <input class="lookup-input" id="lookupInput" type="text" placeholder="APA # or Email" aria-label="APA number or email" inputmode="text" />
+        <button class="lookup-btn" id="lookupBtn" type="submit">FIND ME</button>
+      </form>
+      <div id="lookupStatus" style="text-align:center;margin:0 0 8px;font-size:0.9rem;color:var(--muted);"></div>
+      <div id="playerName" style="display:none;text-align:center;font-weight:700;font-size:1.1rem;margin:0 0 8px;"></div>
+      <div id="teamPills" style="display:none;text-align:center;margin:0 auto 16px;max-width:560px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
+      <div id="browseLink" style="display:none;text-align:center;margin:0 0 16px;"><a href="#" style="color:var(--spm-accent);font-size:0.85rem;" onclick="event.preventDefault();document.getElementById('controlsCard').style.display='block';document.getElementById('browseLink').style.display='none';">Browse all divisions</a></div>
+
+      <div class="controls-card" id="controlsCard">
         <div class="select-wrapper">
           <select id="sessionSelect">
             <option value="0">Loading sessions...</option>
@@ -892,6 +959,80 @@
         }
       }
 
+      /* ── Player Lookup ── */
+
+      async function handleLookup() {
+        var input = document.getElementById("lookupInput").value.trim();
+        if (!input) return;
+
+        var btn = document.getElementById("lookupBtn");
+        var statusEl = document.getElementById("lookupStatus");
+        var nameEl = document.getElementById("playerName");
+        var pillsEl = document.getElementById("teamPills");
+
+        btn.disabled = true;
+        statusEl.textContent = "Searching...";
+        nameEl.style.display = "none";
+        pillsEl.style.display = "none";
+        pillsEl.innerHTML = "";
+
+        try {
+          var data = await callServer("lookupPlayer", { input: input });
+          btn.disabled = false;
+
+          if (!data || !data.success) {
+            statusEl.textContent = (data && data.error) || "Lookup failed.";
+            return;
+          }
+
+          if (!data.found) {
+            statusEl.textContent = "Not found. Try a different APA # or email.";
+            return;
+          }
+
+          statusEl.textContent = "";
+          try { sessionStorage.setItem("sharpshooters_lastInput", input); } catch(e) {}
+
+          // Show player name
+          nameEl.textContent = data.player.firstName + " " + data.player.lastName;
+          nameEl.style.display = "block";
+
+          // Build team pills (deduplicate by base name)
+          var seen = {};
+          var teams = data.teams || [];
+          pillsEl.style.display = "flex";
+
+          for (var t = 0; t < teams.length; t++) {
+            var team = teams[t];
+            var baseName = team.divisionName.replace(/\s*(8[- ]?Ball|9[- ]?Ball)\s*(Open)?$/i, "").trim();
+            if (!baseName) baseName = team.divisionName;
+            if (seen[baseName]) continue;
+            seen[baseName] = true;
+
+            var pill = document.createElement("span");
+            pill.className = "team-pill";
+            pill.textContent = team.teamName;
+            pill.dataset.divName = baseName;
+            pill.addEventListener("click", (function(name) {
+              return function() {
+                scopeValue = name;
+                var matchOpt = scopeOptions.find(function(o) { return o.value === name; });
+                if (matchOpt) updateScopeBtn(matchOpt);
+                else updateScopeBtn({ line1: "", line2: name });
+                loadLeaderboardForSelection();
+              };
+            })(baseName));
+            pillsEl.appendChild(pill);
+          }
+
+          document.getElementById("browseLink").style.display = "block";
+
+        } catch (err) {
+          btn.disabled = false;
+          statusEl.textContent = "Lookup failed. Please try again.";
+        }
+      }
+
       /* ── Init ── */
 
       document.addEventListener("DOMContentLoaded", async function () {
@@ -939,8 +1080,23 @@
         document.getElementById("sessionSelect")
           .addEventListener("change", loadOptionsAndDefault);
 
+        // Wire up lookup form
+        document.getElementById("lookupForm").addEventListener("submit", function(e) {
+          e.preventDefault();
+          handleLookup();
+        });
+
         loadSessions();
         loadOptionsAndDefault();
+
+        // Auto-lookup from sessionStorage
+        try {
+          var saved = sessionStorage.getItem("sharpshooters_lastInput");
+          if (saved) {
+            document.getElementById("lookupInput").value = saved;
+            handleLookup();
+          }
+        } catch(e) {}
       });
     </script>
   </body>
