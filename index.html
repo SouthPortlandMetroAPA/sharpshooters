@@ -640,7 +640,7 @@
         <h1 class="title">South Portland Metro APA</h1>
         <div class="subtitle-group">
           <div class="subtitle">SharpShooters</div>
-          <div class="beta-pill">Beta</div>
+          <!-- beta pill removed -->
         </div>
         <div class="header-status" id="statusText"></div>
       </header>
@@ -944,15 +944,13 @@
           }
 
           scopeOptions = data.options || [];
-          // Don't auto-select League Leaders — let user choose.
-          // This avoids the expensive getLeagueLeaders call on page load.
-          scopeValue = "";
+          scopeValue = "League Leaders";
 
-          updateScopeBtn({ line1: "", line2: "Select a division..." });
+          var defaultOpt = scopeOptions[0] || { line1: "", line2: "League Leaders" };
+          updateScopeBtn(defaultOpt);
 
           showMessage(null, "");
-          // Do NOT call loadLeaderboardForSelection() here.
-          // Leaders load only when user picks a scope or clicks a team pill.
+          await loadLeaderboardForSelection();
         } catch (err) {
           showMessage("error", "Unexpected error while loading options.");
         }
