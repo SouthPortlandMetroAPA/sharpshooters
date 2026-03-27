@@ -690,6 +690,8 @@
 
       function callServer(action, params) {
         var payload = Object.assign({ action: action }, params || {});
+        var _cs = performance.now();
+        console.log('[TIMING] API call START: ' + action);
 
         return fetch(API_URL, {
           method: 'POST',
@@ -697,8 +699,12 @@
           body: JSON.stringify(payload),
           redirect: 'follow'
         }).then(function(response) {
+          console.log('[TIMING] API call RESPONSE: ' + action + ' status=' + response.status + ' (' + Math.round(performance.now() - _cs) + 'ms)');
           if (!response.ok) throw new Error('Network error: ' + response.status);
           return response.json();
+        }).then(function(data) {
+          console.log('[TIMING] API call PARSED: ' + action + ' (' + Math.round(performance.now() - _cs) + 'ms total)');
+          return data;
         });
       }
 
@@ -1063,14 +1069,20 @@
       /* ── Init ── */
 
       document.addEventListener("DOMContentLoaded", async function () {
+        var _pageStart = performance.now();
+        console.log('[TIMING] DOMContentLoaded fired at ' + Math.round(_pageStart) + 'ms');
+
         // ── Maintenance mode check ──────────────────────────────────
         try {
+          var _mStart = performance.now();
+          console.log('[TIMING] Maintenance check START');
           var maintResp = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({ action: 'getMaintenanceMode' }),
             redirect: 'follow'
           }).then(function(r) { return r.json(); });
+          console.log('[TIMING] Maintenance check DONE (' + Math.round(performance.now() - _mStart) + 'ms)');
 
           if (maintResp.success && maintResp.enabled) {
             var urlParams = new URLSearchParams(window.location.search);
@@ -1095,6 +1107,8 @@
 
         // ── Maintenance check passed - reveal the page ──────────────
         document.body.style.visibility = 'visible';
+        var _t0 = performance.now();
+        console.log('[TIMING] Page revealed at ' + Math.round(_t0) + 'ms');
 
         document.getElementById("scopeBtn")
           .addEventListener("click", toggleScopeList);
@@ -1113,17 +1127,30 @@
           handleLookup();
         });
 
+        var _t1 = performance.now();
+        console.log('[TIMING] Starting loadSessions at ' + Math.round(_t1) + 'ms (delta: ' + Math.round(_t1 - _t0) + 'ms)');
         loadSessions();
-        loadOptionsAndDefault();
+
+        var _t2 = performance.now();
+        console.log('[TIMING] Starting loadOptionsAndDefault at ' + Math.round(_t2) + 'ms (delta: ' + Math.round(_t2 - _t1) + 'ms)');
+        await loadOptionsAndDefault();
+        var _t3 = performance.now();
+        console.log('[TIMING] loadOptionsAndDefault DONE at ' + Math.round(_t3) + 'ms (took: ' + Math.round(_t3 - _t2) + 'ms)');
 
         // Auto-lookup from sessionStorage
         try {
           var saved = sessionStorage.getItem("sharpshooters_lastInput");
           if (saved) {
+            var _t4 = performance.now();
+            console.log('[TIMING] Starting auto-lookup at ' + Math.round(_t4) + 'ms');
             document.getElementById("lookupInput").value = saved;
-            handleLookup();
+            await handleLookup();
+            var _t5 = performance.now();
+            console.log('[TIMING] Auto-lookup DONE at ' + Math.round(_t5) + 'ms (took: ' + Math.round(_t5 - _t4) + 'ms)');
           }
         } catch(e) {}
+
+        console.log('[TIMING] Total init: ' + Math.round(performance.now() - _t0) + 'ms');
       });
     </script>
   </body>
