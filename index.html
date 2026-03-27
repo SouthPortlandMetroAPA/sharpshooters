@@ -583,9 +583,7 @@
       <section id="resultsCard" class="results-card" style="display: none;">
         <div id="leaderboardContainer" class="leaderboard-grid"></div>
 
-        <div class="footer-note">
-          Updates within 2-3 days of scoresheet review.
-        </div>
+        <div class="footer-note" id="weekNote" style="display:none;font-weight:700;font-size:1rem;color:var(--spm-accent);"></div>
       </section>
 
       <a class="fix-it" href="https://bit.ly/SPMFixIt" target="_blank">
@@ -656,6 +654,15 @@
         currentScope = data.scope;
         currentTitle = data.title || "";
         currentItems = Array.isArray(data.items) ? data.items.slice() : [];
+
+        // Show max week processed
+        var weekNote = document.getElementById("weekNote");
+        if (data.maxWeek && data.maxWeek > 0) {
+          weekNote.textContent = "Through Week " + data.maxWeek;
+          weekNote.style.display = "block";
+        } else {
+          weekNote.style.display = "none";
+        }
 
         var container = document.getElementById("leaderboardContainer");
 
