@@ -829,7 +829,7 @@
 
       async function loadOptionsAndDefault() {
         var sessionIndex = document.getElementById("sessionSelect").value;
-        showMessage("info", "Loading leaderboard...");
+        showMessage("info", "Loading divisions...");
 
         try {
           var data = await callServer('getLeaderboardOptions', {
@@ -841,13 +841,15 @@
           }
 
           scopeOptions = data.options || [];
-          scopeValue = "League Leaders";
+          // Don't auto-select League Leaders — let user choose.
+          // This avoids the expensive getLeagueLeaders call on page load.
+          scopeValue = "";
 
-          var defaultOpt = scopeOptions[0] || { line1: "", line2: "League Leaders" };
-          updateScopeBtn(defaultOpt);
+          updateScopeBtn({ line1: "", line2: "Select a division..." });
 
           showMessage(null, "");
-          await loadLeaderboardForSelection();
+          // Do NOT call loadLeaderboardForSelection() here.
+          // Leaders load only when user picks a scope or clicks a team pill.
         } catch (err) {
           showMessage("error", "Unexpected error while loading options.");
         }
@@ -856,6 +858,9 @@
       /* ── Load leaderboard for current selection ── */
 
       async function loadLeaderboardForSelection() {
+        // If no scope selected yet, don't load anything
+        if (!scopeValue) return;
+
         showMessage("info", "Loading...");
         clearResults();
         var sessionIndex = document.getElementById("sessionSelect").value;
