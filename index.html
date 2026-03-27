@@ -88,6 +88,159 @@
         opacity: 0.9;
       }
 
+      /* ── Player Lookup Bar ── */
+
+      .lookup-bar {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto 14px;
+        padding: 12px 16px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      }
+
+      .lookup-bar .lookup-input {
+        width: 100%;
+        min-width: 0;
+        padding: 12px 16px;
+        font-size: 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        font-family: inherit;
+        text-align: center;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        min-height: 48px;
+      }
+
+      .lookup-bar .lookup-input:focus {
+        border-color: var(--spm-accent);
+        box-shadow: 0 0 0 3px rgba(0, 49, 161, 0.15);
+      }
+
+      .lookup-bar .lookup-btn {
+        width: 100%;
+        padding: 12px 20px;
+        border: none;
+        border-bottom: 3px solid rgba(0, 0, 0, 0.25);
+        border-radius: 12px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(0,0,0,0.10) 100%),
+          linear-gradient(135deg, var(--spm-primary), var(--spm-accent));
+        color: #fff;
+        font-weight: 900;
+        font-size: 1rem;
+        letter-spacing: 0.1em;
+        box-shadow:
+          inset 0 1px 1px rgba(255, 255, 255, 0.35),
+          0 4px 10px rgba(0, 0, 0, 0.30);
+        cursor: pointer;
+        font-family: inherit;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        white-space: nowrap;
+        min-height: 48px;
+      }
+
+      .lookup-bar .lookup-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .lookup-bar .lookup-btn:active:not(:disabled) {
+        transform: translateY(2px);
+        border-bottom-width: 1px;
+        box-shadow:
+          inset 0 1px 1px rgba(255, 255, 255, 0.15),
+          0 1px 4px rgba(0, 0, 0, 0.25);
+      }
+
+      /* ── Lookup status ── */
+
+      .lookup-status {
+        text-align: center;
+        color: var(--muted);
+        min-height: 1.5em;
+        margin-bottom: 8px;
+        font-size: 0.875rem;
+      }
+
+      /* ── Player results ── */
+
+      .player-results {
+        display: none;
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto 14px;
+      }
+
+      .player-name {
+        text-align: center;
+        font-size: 1.0625rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+
+      .player-pills {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .player-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--spm-primary), var(--spm-accent));
+        color: #fff;
+        font-weight: 800;
+        font-size: 0.9375rem;
+        letter-spacing: 0.02em;
+        font-family: inherit;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        min-height: 48px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .player-pill:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(234, 0, 42, 0.3), 0 4px 10px rgba(0, 49, 161, 0.2);
+      }
+
+      .browse-all-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 12px auto 0;
+        padding: 8px 16px;
+        background: none;
+        border: none;
+        color: var(--spm-accent);
+        font-family: inherit;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 2px;
+        min-height: 48px;
+      }
+
       /* ── Controls Card ── */
 
       .controls-card {
@@ -141,7 +294,7 @@
         box-shadow: 0 0 0 3px rgba(0, 49, 161, 0.15);
       }
 
-      /* ── Custom scope picker ── */
+      /* ── Custom scope picker (division dropdown) ── */
 
       .scope-picker {
         position: relative;
@@ -150,27 +303,39 @@
 
       .scope-btn {
         width: 100%;
-        padding: 10px 36px 10px 14px;
-        font-size: 0.9rem;
-        border-radius: 999px;
+        padding: 12px 40px 12px 16px;
+        font-size: 0.9375rem;
+        border-radius: 12px;
         border: 1px solid var(--border);
-        background: var(--bg);
+        background: var(--card);
         text-align: center;
         color: var(--text);
         font-weight: 600;
         cursor: pointer;
         line-height: 1.3;
+        min-height: 48px;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s;
       }
 
       .scope-btn::after {
-        content: "\25BC";
+        content: '';
         position: absolute;
-        right: 14px;
+        right: 16px;
         top: 50%;
         transform: translateY(-50%);
-        font-size: 0.7rem;
-        color: var(--muted);
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid var(--muted);
+        transition: transform 0.2s;
         pointer-events: none;
+      }
+
+      .scope-picker.open .scope-btn::after {
+        transform: translateY(-50%) rotate(180deg);
       }
 
       .scope-btn:focus {
@@ -179,16 +344,24 @@
         box-shadow: 0 0 0 3px rgba(0, 49, 161, 0.15);
       }
 
-      .scope-btn-line1 {
-        font-size: 0.78rem;
-        font-weight: 600;
+      .scope-btn .trigger-placeholder {
         color: var(--muted);
+        font-weight: 400;
       }
 
-      .scope-btn-line2 {
-        font-size: 0.9rem;
+      .scope-btn .trigger-night {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--muted);
+        font-weight: 400;
+        line-height: 1.2;
+      }
+
+      .scope-btn .trigger-name {
+        display: block;
         font-weight: 700;
-        color: var(--text);
+        font-size: 0.9375rem;
+        line-height: 1.3;
       }
 
       .scope-list {
@@ -196,42 +369,53 @@
         position: absolute;
         left: 0;
         right: 0;
-        top: calc(100% + 6px);
+        top: calc(100% + 4px);
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 12px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         z-index: 100;
-        max-height: 60vh;
+        max-height: 320px;
         overflow-y: auto;
-        padding: 6px;
+        padding: 4px 0;
       }
 
-      .scope-list.open { display: block; }
+      .scope-picker.open .scope-list { display: block; }
+
+      .scope-day-header {
+        padding: 10px 16px 4px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        text-align: center;
+      }
 
       .scope-item {
-        padding: 10px 14px;
-        border-radius: 10px;
-        text-align: center;
+        padding: 10px 16px;
         cursor: pointer;
-        line-height: 1.3;
+        transition: background 0.15s;
+        text-align: center;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
-      .scope-item:active,
+      .scope-item:hover {
+        background: rgba(0, 49, 161, 0.06);
+      }
+
       .scope-item.selected {
-        background: linear-gradient(135deg, rgba(234, 0, 42, 0.08), rgba(0, 49, 161, 0.08));
+        background: rgba(0, 49, 161, 0.08);
       }
 
-      .scope-item-line1 {
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: var(--muted);
-      }
-
-      .scope-item-line2 {
-        font-size: 0.85rem;
+      .scope-item .item-name {
         font-weight: 700;
+        font-size: 0.9375rem;
         color: var(--text);
+        line-height: 1.3;
       }
 
       .scope-item-single {
@@ -371,7 +555,7 @@
       }
 
       /* ================================================================
-         TABLET OVERRIDES  (768px – 1199px)
+         TABLET OVERRIDES  (768px - 1199px)
          ================================================================ */
 
       @media (min-width: 768px) and (max-width: 1199px) {
@@ -392,16 +576,43 @@
         .beta-pill { font-size: 0.65rem; padding: 3px 14px; }
         .header-status { font-size: 0.82rem; }
 
+        /* Tablet lookup bar — horizontal */
+        .lookup-bar {
+          max-width: 560px;
+          padding: 10px 14px;
+          border-radius: 14px;
+          flex-direction: row;
+          align-items: center;
+        }
+        .lookup-bar .lookup-input {
+          flex: 1;
+          width: auto;
+          min-height: 44px;
+          padding: 10px 14px;
+          font-size: 0.9375rem;
+        }
+        .lookup-bar .lookup-btn {
+          width: auto;
+          flex-shrink: 0;
+          min-height: 44px;
+          padding: 10px 20px;
+          font-size: 0.9375rem;
+        }
+
+        .player-results { max-width: 560px; }
+        .player-pills {
+          flex-direction: row;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+        .player-pill { width: auto; }
+
         .controls-card { border-radius: 16px; padding: 12px; margin-bottom: 10px; }
         .select-wrapper select { font-size: 0.88rem; padding: 8px 36px 8px 14px; }
-        .scope-btn { font-size: 0.88rem; padding: 8px 36px 8px 14px; }
-        .scope-btn-line1 { font-size: 0.75rem; }
-        .scope-btn-line2 { font-size: 0.88rem; }
+
+        .scope-btn { font-size: 0.9rem; padding: 10px 36px 10px 14px; }
         .scope-list { border-radius: 14px; }
-        .scope-item { padding: 8px 12px; border-radius: 10px; }
-        .scope-item-line1 { font-size: 0.72rem; }
-        .scope-item-line2 { font-size: 0.88rem; }
-        .scope-item-single { font-size: 0.88rem; }
+        .scope-item { padding: 8px 12px; }
 
         .msg { font-size: 0.88rem; border-radius: 16px; padding: 12px; margin-bottom: 10px; }
 
@@ -447,6 +658,67 @@
         }
         .header-status { display: none; }
 
+        /* ── Desktop lookup bar — horizontal ── */
+        .lookup-bar {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 10px;
+          max-width: 900px;
+          border-radius: 10px;
+          padding: 10px 14px;
+          margin-bottom: 10px;
+        }
+        .lookup-bar .lookup-input {
+          flex: 1;
+          width: auto;
+          font-size: 14px;
+          padding: 8px 14px;
+          text-align: left;
+          min-height: 36px;
+          border-radius: 8px;
+        }
+        .lookup-bar .lookup-btn {
+          width: auto;
+          flex-shrink: 0;
+          padding: 8px 22px;
+          font-size: 13px;
+          letter-spacing: 0.06em;
+          min-height: 36px;
+          border-radius: 8px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+          transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .lookup-bar .lookup-btn:hover:not(:disabled) {
+          filter: brightness(1.1);
+          box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+        }
+
+        /* ── Desktop player results ── */
+        .player-results { max-width: 900px; }
+        .player-name { font-size: 15px; margin-bottom: 6px; }
+        .player-pills {
+          flex-direction: row;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 8px;
+        }
+        .player-pill {
+          width: auto;
+          padding: 8px 18px;
+          font-size: 13px;
+          min-height: 36px;
+          border-radius: 10px;
+        }
+        .player-pill:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(234, 0, 42, 0.25), 0 4px 10px rgba(0, 49, 161, 0.18);
+        }
+        .browse-all-btn {
+          min-height: 32px;
+          font-size: 12px;
+        }
+
         /* ── Desktop controls — horizontal row ── */
         .controls-card {
           display: flex;
@@ -472,29 +744,36 @@
           margin-bottom: 0;
         }
         .scope-btn {
-          font-size: 0.82rem;
-          padding: 7px 28px 7px 12px;
-          text-align: left;
+          font-size: 14px;
+          padding: 10px 36px 10px 14px;
+          border-radius: 10px;
+          min-height: 40px;
         }
-        .scope-btn::after { font-size: 0.6rem; right: 10px; }
-        .scope-btn-line1 { font-size: 0.65rem; }
-        .scope-btn-line2 { font-size: 0.82rem; }
+        .scope-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+          border-color: var(--spm-accent);
+        }
+        .scope-btn .trigger-night { font-size: 0.65rem; }
+        .scope-btn .trigger-name { font-size: 14px; }
         .scope-list {
           border-radius: 10px;
-          padding: 4px;
           box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         }
+        .scope-day-header {
+          padding: 8px 14px 3px;
+          font-size: 0.625rem;
+        }
         .scope-item {
-          padding: 6px 10px;
-          border-radius: 8px;
-          text-align: left;
-          transition: background 0.1s ease;
+          padding: 8px 14px;
+          min-height: 36px;
+          font-size: 13px;
+          transition: background 0.15s;
         }
         .scope-item:hover {
-          background: rgba(0, 49, 161, 0.06);
+          background: rgba(0, 49, 161, 0.08);
         }
-        .scope-item-line1 { font-size: 0.65rem; }
-        .scope-item-line2 { font-size: 0.82rem; }
+        .scope-item .item-name { font-size: 13px; }
         .scope-item-single { font-size: 0.82rem; }
 
         /* ── Desktop messages ── */
@@ -550,6 +829,18 @@
         .fix-it-sub { font-size: 0.6rem; }
         .footer-note { font-size: 0.68rem; margin-top: 14px; }
       }
+
+      /* ── Hover states (non-touch devices only) ── */
+      @media (hover: hover) {
+        .scope-btn:hover {
+          border-color: var(--spm-accent);
+        }
+        .lookup-bar .lookup-btn:hover:not(:disabled) {
+          box-shadow:
+            inset 0 1px 1px rgba(255, 255, 255, 0.35),
+            0 6px 14px rgba(0, 0, 0, 0.35);
+        }
+      }
     </style>
   </head>
 
@@ -564,7 +855,26 @@
         <div class="header-status" id="statusText"></div>
       </header>
 
-      <div class="controls-card">
+      <!-- ── Player Lookup Bar ── -->
+      <form class="lookup-bar" id="lookupForm" autocomplete="off">
+        <input
+          class="lookup-input"
+          id="lookupInput"
+          type="text"
+          placeholder="APA # or Email"
+          aria-label="APA number or email address"
+          inputmode="text"
+        />
+        <button class="lookup-btn" id="lookupBtn" type="submit">FIND ME</button>
+      </form>
+
+      <!-- ── Lookup status ── -->
+      <div class="lookup-status" id="lookupStatus"></div>
+
+      <!-- ── Player results (team pills + browse link) ── -->
+      <div class="player-results" id="playerResults"></div>
+
+      <div class="controls-card" id="controlsCard">
         <div class="select-wrapper">
           <select id="sessionSelect">
             <option value="0">Loading sessions...</option>
@@ -572,7 +882,7 @@
         </div>
         <div class="scope-picker" id="scopePicker">
           <div class="scope-btn" id="scopeBtn" tabindex="0">
-            <div class="scope-btn-line2">Loading views...</div>
+            <span class="trigger-name">Loading views...</span>
           </div>
           <div class="scope-list" id="scopeList"></div>
         </div>
@@ -641,6 +951,18 @@
         currentItems = [];
         document.getElementById("leaderboardContainer").innerHTML = "";
         document.getElementById("resultsCard").style.display = "none";
+      }
+
+      function escapeHtml(s) {
+        if (s === null || s === undefined) return '';
+        var d = document.createElement('div');
+        d.appendChild(document.createTextNode(String(s)));
+        return d.innerHTML;
+      }
+
+      // Strip "8 Ball", "9 Ball", "8-Ball", "9-Ball" suffix to get base division name.
+      function stripFormatSuffix(name) {
+        return name.replace(/\s*(8|9)[\s-]?Ball$/i, '').trim();
       }
 
       /* ── Render ── */
@@ -760,69 +1082,94 @@
         });
       }
 
-      /* ── Scope picker ── */
+      /* ── Custom scope picker (Playoffs-style dropdown) ── */
 
       function updateScopeBtn(opt) {
         var btn = document.getElementById("scopeBtn");
         btn.innerHTML = "";
-        if (opt.line1) {
-          var l1 = document.createElement("div");
-          l1.className = "scope-btn-line1";
-          l1.textContent = opt.line1;
-          btn.appendChild(l1);
+        if (opt.night) {
+          var nightSpan = document.createElement("span");
+          nightSpan.className = "trigger-night";
+          nightSpan.textContent = opt.night;
+          btn.appendChild(nightSpan);
         }
-        var l2 = document.createElement("div");
-        l2.className = "scope-btn-line2";
-        l2.textContent = opt.line2;
-        btn.appendChild(l2);
+        var nameSpan = document.createElement("span");
+        nameSpan.className = "trigger-name";
+        nameSpan.textContent = opt.label || opt.line2 || "League Leaders";
+        btn.appendChild(nameSpan);
       }
 
       function buildScopeList() {
         var list = document.getElementById("scopeList");
         list.innerHTML = "";
-        scopeOptions.forEach(function (opt) {
+
+        // "League Leaders" as first item (not grouped under any day)
+        var leagueItem = document.createElement("div");
+        leagueItem.className = "scope-item";
+        if (scopeValue === "League Leaders") leagueItem.classList.add("selected");
+        var leagueName = document.createElement("div");
+        leagueName.className = "scope-item-single";
+        leagueName.textContent = "League Leaders";
+        leagueItem.appendChild(leagueName);
+        leagueItem.addEventListener("click", function () {
+          scopeValue = "League Leaders";
+          updateScopeBtn({ label: "League Leaders" });
+          closeScopeList();
+          loadLeaderboardForSelection();
+        });
+        list.appendChild(leagueItem);
+
+        // Group division options by night of play
+        var lastNight = null;
+        for (var i = 0; i < scopeOptions.length; i++) {
+          var opt = scopeOptions[i];
+          // Skip the League Leaders entry from scopeOptions if it exists
+          if (opt.value === "League Leaders") continue;
+
+          var night = opt.night || "";
+
+          // Add day header when night group changes
+          if (night !== lastNight && night) {
+            var header = document.createElement("div");
+            header.className = "scope-day-header";
+            header.textContent = night;
+            list.appendChild(header);
+          }
+          lastNight = night;
+
           var item = document.createElement("div");
           item.className = "scope-item";
           if (opt.value === scopeValue) item.classList.add("selected");
 
-          if (opt.line1) {
-            var l1 = document.createElement("div");
-            l1.className = "scope-item-line1";
-            l1.textContent = opt.line1;
-            item.appendChild(l1);
-            var l2 = document.createElement("div");
-            l2.className = "scope-item-line2";
-            l2.textContent = opt.line2;
-            item.appendChild(l2);
-          } else {
-            var single = document.createElement("div");
-            single.className = "scope-item-single";
-            single.textContent = opt.line2;
-            item.appendChild(single);
-          }
+          var nameDiv = document.createElement("div");
+          nameDiv.className = "item-name";
+          nameDiv.textContent = opt.label;
+          item.appendChild(nameDiv);
 
-          item.addEventListener("click", function () {
-            scopeValue = opt.value;
-            updateScopeBtn(opt);
-            closeScopeList();
-            loadLeaderboardForSelection();
-          });
+          item.addEventListener("click", (function (o) {
+            return function () {
+              scopeValue = o.value;
+              updateScopeBtn(o);
+              closeScopeList();
+              loadLeaderboardForSelection();
+            };
+          })(opt));
           list.appendChild(item);
-        });
+        }
       }
 
       function toggleScopeList() {
-        var list = document.getElementById("scopeList");
-        if (list.classList.contains("open")) {
+        var picker = document.getElementById("scopePicker");
+        if (picker.classList.contains("open")) {
           closeScopeList();
         } else {
           buildScopeList();
-          list.classList.add("open");
+          picker.classList.add("open");
         }
       }
 
       function closeScopeList() {
-        document.getElementById("scopeList").classList.remove("open");
+        document.getElementById("scopePicker").classList.remove("open");
       }
 
       /* ── Load options + default view ── */
@@ -840,11 +1187,51 @@
             return;
           }
 
-          scopeOptions = data.options || [];
-          scopeValue = "League Leaders";
+          // Parse options from API and build grouped dropdown entries
+          var rawOptions = data.options || [];
+          var dayOrder = { 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7, '': 8 };
 
-          var defaultOpt = scopeOptions[0] || { line1: "", line2: "League Leaders" };
-          updateScopeBtn(defaultOpt);
+          // Collapse DJ pairs: group by base division name
+          var baseMap = {};  // baseName → { night, value (first full name), label }
+          var leagueOpt = null;
+
+          rawOptions.forEach(function (opt) {
+            if (opt.value === "League Leaders" || (!opt.line1 && opt.line2 === "League Leaders")) {
+              leagueOpt = opt;
+              return;
+            }
+            var fullName = opt.value || opt.line2 || "";
+            var night = (opt.line1 || "").replace(/[()]/g, "").trim();
+            var baseName = stripFormatSuffix(fullName);
+            if (!baseName) baseName = fullName;
+
+            if (!baseMap[baseName]) {
+              baseMap[baseName] = {
+                night: night,
+                value: fullName,
+                label: baseName,
+                sortKey: 0,
+                fullNames: []
+              };
+            }
+            baseMap[baseName].fullNames.push(fullName);
+            if (!baseMap[baseName].night && night) baseMap[baseName].night = night;
+          });
+
+          // Build sorted array
+          var collapsed = [];
+          Object.keys(baseMap).forEach(function (bn) {
+            collapsed.push(baseMap[bn]);
+          });
+          collapsed.sort(function (a, b) {
+            var dayDiff = (dayOrder[a.night] || 8) - (dayOrder[b.night] || 8);
+            if (dayDiff !== 0) return dayDiff;
+            return a.label.localeCompare(b.label);
+          });
+
+          scopeOptions = collapsed;
+          scopeValue = "League Leaders";
+          updateScopeBtn({ label: "League Leaders" });
 
           showMessage(null, "");
           await loadLeaderboardForSelection();
@@ -879,6 +1266,163 @@
           showMessage("error", "Unexpected error while loading leaderboard.");
         }
       }
+
+      /* ── Player lookup ── */
+
+      function renderPlayerResults(data) {
+        var container = document.getElementById("playerResults");
+        var statusEl = document.getElementById("lookupStatus");
+
+        if (!data.found) {
+          container.style.display = "none";
+          statusEl.textContent = "No player found. Check your APA # or email.";
+          return;
+        }
+
+        var player = data.player || {};
+        var fullName = ((player.firstName || "") + " " + (player.lastName || "")).trim() || "Player";
+
+        // Deduplicate by base division name (DJ pairs share team name)
+        var teams = data.teams || [];
+        var baseToTeams = {};
+        var baseToNight = {};
+        var baseToFullName = {};
+
+        // Build set of base names from scopeOptions
+        var optionBaseNames = {};
+        scopeOptions.forEach(function (o) {
+          optionBaseNames[o.label] = o.value;
+        });
+
+        for (var t = 0; t < teams.length; t++) {
+          var team = teams[t];
+          var divName = team.divisionName || "";
+          var baseName = stripFormatSuffix(divName);
+          if (!baseName) continue;
+
+          // Match to a dropdown option
+          var matchedValue = optionBaseNames[baseName];
+          if (!matchedValue) continue;
+
+          if (!baseToTeams[baseName]) {
+            baseToTeams[baseName] = [];
+            baseToNight[baseName] = team.nightOfPlay || "";
+            baseToFullName[baseName] = matchedValue;
+          }
+          var teamLabel = team.teamName || ("Team " + team.teamNumber);
+          if (baseToTeams[baseName].indexOf(teamLabel) === -1) {
+            baseToTeams[baseName].push(teamLabel);
+          }
+        }
+
+        var dayOrder = { 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7, '': 8 };
+        var divNames = Object.keys(baseToTeams).sort(function (a, b) {
+          var dayDiff = (dayOrder[baseToNight[a]] || 8) - (dayOrder[baseToNight[b]] || 8);
+          if (dayDiff !== 0) return dayDiff;
+          return a.localeCompare(b);
+        });
+
+        if (divNames.length === 0) {
+          container.style.display = "none";
+          statusEl.textContent = fullName + " — no team divisions found.";
+          return;
+        }
+
+        // Build pill buttons showing team name only
+        var html = '<div class="player-name">' + escapeHtml(fullName) + '</div>';
+        html += '<div class="player-pills">';
+
+        for (var d = 0; d < divNames.length; d++) {
+          var bn = divNames[d];
+          var teamNames = baseToTeams[bn] || [];
+          var pillLabel = teamNames.length > 0 ? teamNames.join(" / ") : bn;
+          html += '<button class="player-pill" data-div="' + escapeHtml(baseToFullName[bn]) + '" data-base="' + escapeHtml(bn) + '">';
+          html += escapeHtml(pillLabel);
+          html += '</button>';
+        }
+
+        html += '</div>';
+
+        container.innerHTML = html;
+        container.style.display = "block";
+        statusEl.textContent = "";
+
+        // Add "Browse all divisions" link
+        var browseLink = document.createElement("button");
+        browseLink.className = "browse-all-btn";
+        browseLink.textContent = "Browse all divisions";
+        browseLink.addEventListener("click", function () {
+          var controlsCard = document.getElementById("controlsCard");
+          controlsCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+        container.appendChild(browseLink);
+
+        // Attach click handlers to pills
+        var pills = container.querySelectorAll(".player-pill");
+        pills.forEach(function (pill) {
+          pill.addEventListener("click", function () {
+            var divValue = pill.getAttribute("data-div");
+            // Auto-select in dropdown and load
+            scopeValue = divValue;
+            // Find matching option to update button display
+            for (var i = 0; i < scopeOptions.length; i++) {
+              if (scopeOptions[i].value === divValue) {
+                updateScopeBtn(scopeOptions[i]);
+                break;
+              }
+            }
+            closeScopeList();
+            loadLeaderboardForSelection();
+          });
+        });
+
+        // Auto-select if only one division
+        if (divNames.length === 1) {
+          pills[0].click();
+        }
+      }
+
+      /* ── Player lookup form submit ── */
+
+      document.getElementById("lookupForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        var input = document.getElementById("lookupInput").value.trim();
+        var statusEl = document.getElementById("lookupStatus");
+        var container = document.getElementById("playerResults");
+        var btn = document.getElementById("lookupBtn");
+        var sessionIndex = document.getElementById("sessionSelect").value;
+
+        if (!input) {
+          statusEl.textContent = "Enter your APA # or email address.";
+          return;
+        }
+
+        btn.disabled = true;
+        statusEl.textContent = "Looking up...";
+        container.style.display = "none";
+
+        try {
+          var data = await callServer("lookupPlayer", {
+            input: input,
+            sessionIndex: sessionIndex
+          });
+          btn.disabled = false;
+
+          if (!data || !data.success) {
+            statusEl.textContent = (data && data.error) || "Lookup failed. Please try again.";
+            return;
+          }
+
+          // Save to sessionStorage for auto-lookup on return
+          try { sessionStorage.setItem("sharpshooters_lastInput", input); } catch (_) {}
+
+          renderPlayerResults(data);
+        } catch (err) {
+          btn.disabled = false;
+          statusEl.textContent = err.message || "Lookup failed. Please try again.";
+        }
+      });
 
       /* ── Init ── */
 
@@ -916,19 +1460,44 @@
         // ── Maintenance check passed - reveal the page ──────────────
         document.body.style.visibility = 'visible';
 
+        // Scope button toggle
         document.getElementById("scopeBtn")
-          .addEventListener("click", toggleScopeList);
+          .addEventListener("click", function (e) {
+            toggleScopeList();
+            e.stopPropagation();
+          });
 
+        // Close dropdown on outside click
         document.addEventListener("click", function (e) {
           var picker = document.getElementById("scopePicker");
           if (!picker.contains(e.target)) closeScopeList();
         });
 
+        // Session change reloads everything
         document.getElementById("sessionSelect")
-          .addEventListener("change", loadOptionsAndDefault);
+          .addEventListener("change", function () {
+            loadOptionsAndDefault();
+            // Re-run player lookup if we have a saved input
+            try {
+              var lastInput = sessionStorage.getItem("sharpshooters_lastInput");
+              if (lastInput) {
+                document.getElementById("lookupInput").value = lastInput;
+                document.getElementById("lookupForm").dispatchEvent(new Event("submit"));
+              }
+            } catch (_) {}
+          });
 
         loadSessions();
-        loadOptionsAndDefault();
+        await loadOptionsAndDefault();
+
+        // Auto-lookup from sessionStorage
+        try {
+          var lastInput = sessionStorage.getItem("sharpshooters_lastInput");
+          if (lastInput) {
+            document.getElementById("lookupInput").value = lastInput;
+            document.getElementById("lookupForm").dispatchEvent(new Event("submit"));
+          }
+        } catch (_) {}
       });
     </script>
   </body>
