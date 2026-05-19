@@ -657,6 +657,13 @@
 
       <div class="controls-card" id="controlsCard">
         <div class="select-wrapper">
+          <select id="areaSelect" aria-label="Area">
+            <option value="spm">South Portland Metro</option>
+            <option value="cra">Columbia River</option>
+            <option value="both">Both Areas</option>
+          </select>
+        </div>
+        <div class="select-wrapper">
           <select id="sessionSelect">
             <option value="0">Loading sessions...</option>
           </select>
@@ -713,12 +720,19 @@
 
 /* ── App identity ── */
 const APP_NAME    = 'SharpShooters';
-const APP_VERSION = '1.0';
+const APP_VERSION = '1.1';
 
 /* ── Supabase ── */
 const SB_URL  = 'https://dqzbekoaysgaiqljueac.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxemJla29heXNnYWlxbGp1ZWFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzA5NzgsImV4cCI6MjA5MDc0Njk3OH0.cCdGxZ4zEFzU_r6lWSDeoNWG67Q4MSYCAtpds035dfU';
-const OPERATOR_ID = 1;   // SPM — divisions/reports are filtered to this
+const OPERATOR_ID = 1;   // SPM uploads the reports; session list + refresh
+                         // poll filter on this. The leaderboard's area
+                         // scope comes from AREAS below.
+const AREAS = {
+  spm:  { label: 'South Portland Metro', operators: [1] },
+  cra:  { label: 'Columbia River',       operators: [2] },
+  both: { label: 'Both Areas',           operators: [1, 2] }
+};
 
 function sbHeaders(profile) {
   return {
@@ -792,18 +806,21 @@ const DAY_ORDER = {
 };
 
 /* ── State ── */
-var sessions        = [];     // [{id,name,start_date,is_current}]
-var currentSession  = null;   // id
-var divisions       = [];     // slate.divisions rows for the session (SPM)
-var llRows          = [];     // sp_all_league_rows for the latest ll report
-var bdRows          = [];     // sp_by_division_rows for the latest bd report
-var reportNameMap   = {};     // member_number → plain report name
-var nameCache       = {};     // member_number → First "Nickname" Last
-var scopeGroups     = [];     // [{name,divNums:Set,night,has8,has9,isMasters,minNum}]
-var scopeOptions    = [];     // dropdown options
-var scopeValue      = 'League Leaders';
-var currentMaxWeek  = 0;
-var lastReportStamp = '';     // change-detection key for live refresh
+var sessions          = [];     // [{id,name,start_date,is_current}]
+var currentSession    = null;   // id
+var currentArea       = 'spm';  // 'spm' | 'cra' | 'both'
+var allDivisions      = [];     // every SPM + CRA division for the session
+var divisions         = [];     // current-area subset of allDivisions
+var allBdRows         = [];     // every bd row for the latest bd report
+var bdRows            = [];     // current-area subset of allBdRows
+var _operatorByDivNum = {};     // division_number → operator_id
+var reportNameMap     = {};     // member_number → plain report name (fallback)
+var nameCache         = {};     // member_number → First "Nickname" Last
+var scopeGroups       = [];     // [{name,divNums:Set,night,has8,has9,isMasters,minNum}]
+var scopeOptions      = [];     // dropdown options
+var scopeValue        = 'League Leaders';
+var currentMaxWeek    = 0;
+var lastReportStamp   = '';     // change-detection key for live refresh
 
 /* ── DOM helpers ── */
 function esc(s) { return String(s == null ? '' : s); }
@@ -953,7 +970,9 @@ function leadersFor(aggRows, col) {
   return { count: max, members: members };
 }
 function computeLeague() {
-  var agg = aggregateByMember(llRows);
+  /* Aggregate the current area's bd rows by member; the all-league report
+     is no longer used so the League board respects the area selector. */
+  var agg = aggregateByMember(bdRows);
   var items = ALL_CODES.map(function (code) {
     var res = leadersFor(agg, CODE_COL[code]);
     return { label: CODE_LABEL[code], count: res.count, members: res.members };
@@ -1141,63 +1160,67 @@ async function loadSession(sessionId, isRefresh) {
   if (!isRefresh) showMessage('info', 'Loading leaderboard…');
 
   try {
-    /* Latest cumulative ll + bd reports for this session. */
-    var llRep = await sbGet('slate',
-      'sp_reports?session_id=eq.' + sessionId + '&operator_id=eq.' + OPERATOR_ID +
-      '&report_kind=eq.ll&select=id,week_no&order=uploaded_at.desc&limit=1');
     var bdRep = await sbGet('slate',
       'sp_reports?session_id=eq.' + sessionId + '&operator_id=eq.' + OPERATOR_ID +
       '&report_kind=eq.bd&select=id,week_no&order=uploaded_at.desc&limit=1');
 
-    /* Divisions for the session (SPM only) — drives the scope picker. */
-    divisions = await sbGet('slate',
-      'divisions?session_id=eq.' + sessionId + '&operator_id=eq.' + OPERATOR_ID +
-      '&select=division_number,name,format,night_of_play&order=division_number');
-    scopeGroups = buildScopeGroups();
-    buildScopeOptions();
+    /* All SPM + CRA divisions for the session; applyArea slices it. */
+    allDivisions = await sbGet('slate',
+      'divisions?session_id=eq.' + sessionId +
+      '&select=division_number,name,format,night_of_play,operator_id&order=division_number');
+    _operatorByDivNum = {};
+    allDivisions.forEach(function (d) {
+      _operatorByDivNum[d.division_number] = d.operator_id;
+    });
 
-    /* League rows. */
-    llRows = llRep.length
+    /* All bd rows for the latest report — SPM's report covers both areas. */
+    allBdRows = bdRep.length
       ? await sbGetAll('slate',
-          'sp_all_league_rows?report_id=eq.' + llRep[0].id +
-          '&select=member_number,member_name,rackless,eight_ob,eight_br,nine_os,nine_br,skunk')
+          'sp_by_division_rows?report_id=eq.' + bdRep[0].id +
+          '&select=division_number,team_number,member_number,member_name,rackless,eight_ob,eight_br,nine_os,nine_br,skunk')
       : [];
 
-    /* Division rows — only the SPM division numbers. */
-    if (bdRep.length && divisions.length) {
-      var nums = divisions.map(function (d) { return d.division_number; });
-      bdRows = await sbGetAll('slate',
-        'sp_by_division_rows?report_id=eq.' + bdRep[0].id +
-        '&division_number=in.(' + nums.join(',') + ')' +
-        '&select=division_number,team_number,member_number,member_name,rackless,eight_ob,eight_br,nine_os,nine_br,skunk');
-    } else {
-      bdRows = [];
-    }
-
-    /* Plain-name fallback map. */
     reportNameMap = {};
-    llRows.concat(bdRows).forEach(function (r) {
+    allBdRows.forEach(function (r) {
       if (r.member_number && r.member_name && !reportNameMap[r.member_number]) {
         reportNameMap[r.member_number] = r.member_name;
       }
     });
 
-    currentMaxWeek = (llRep[0] && llRep[0].week_no)
-                  || (bdRep[0] && bdRep[0].week_no) || 0;
-
-    /* Default scope to League unless a still-valid scope is selected. */
-    var stillValid = scopeOptions.some(function (o) { return o.value === scopeValue; });
-    if (!stillValid) scopeValue = 'League Leaders';
-    var opt = scopeOptions.filter(function (o) { return o.value === scopeValue; })[0]
-            || scopeOptions[0];
-    updateScopeBtn(opt);
+    currentMaxWeek = (bdRep[0] && bdRep[0].week_no) || 0;
 
     showMessage(null, '');
-    await showBoardForScope();
+    await applyArea(currentArea);
   } catch (e) {
     console.error('[session] load failed', e);
     showMessage('error', 'Could not load the leaderboard. Please try again.');
   }
+}
+
+async function applyArea(areaKey) {
+  /* Filter divisions + bd rows to the picked area's operator(s), rebuild
+     the scope picker, and re-render the board. Called on session change
+     and area-select change. */
+  if (!AREAS[areaKey]) areaKey = 'spm';
+  currentArea = areaKey;
+  try { sessionStorage.setItem('sharpshooters_area', areaKey); } catch (e) {}
+
+  var ops = new Set(AREAS[areaKey].operators);
+  divisions = allDivisions.filter(function (d) { return ops.has(d.operator_id); });
+  bdRows    = allBdRows.filter(function (r) { return ops.has(_operatorByDivNum[r.division_number]); });
+
+  scopeGroups = buildScopeGroups();
+  buildScopeOptions();
+
+  /* Keep the current scope if it still exists in the new area; otherwise
+     fall back to League. */
+  var stillValid = scopeOptions.some(function (o) { return o.value === scopeValue; });
+  if (!stillValid) scopeValue = 'League Leaders';
+  var opt = scopeOptions.filter(function (o) { return o.value === scopeValue; })[0]
+          || scopeOptions[0];
+  if (opt) updateScopeBtn(opt);
+
+  await showBoardForScope();
 }
 
 /* ── Player lookup ── */
@@ -1217,7 +1240,8 @@ async function handleLookup() {
 
   try {
     var rows = await sbRpc('slate', 'ss_player_lookup',
-      { p_input: input, p_session_id: currentSession });
+      { p_input: input, p_session_id: currentSession,
+        p_operator_ids: AREAS[currentArea].operators });
     btn.disabled = false;
 
     if (!rows || !rows.length) {
@@ -1344,10 +1368,33 @@ document.addEventListener('DOMContentLoaded', async function () {
     var id = parseInt(this.value, 10);
     if (!isNaN(id)) loadSession(id);
   });
+  /* Area selector — re-slices the divisions + bd rows already in memory
+     and re-renders. If a player lookup is up, re-run it with the new
+     operator filter so the team pills match the chosen area. */
+  var areaSel = document.getElementById('areaSelect');
+  if (areaSel) {
+    areaSel.value = currentArea;
+    areaSel.addEventListener('change', async function () {
+      await applyArea(this.value);
+      var saved = '';
+      try { saved = sessionStorage.getItem('sharpshooters_lastInput') || ''; } catch (e) {}
+      if (saved && document.getElementById('playerName').style.display !== 'none') {
+        document.getElementById('lookupInput').value = saved;
+        handleLookup();
+      }
+    });
+  }
   document.getElementById('lookupForm').addEventListener('submit', function (e) {
     e.preventDefault();
     handleLookup();
   });
+
+  /* Restore saved area before loading data so the first paint is correct. */
+  try {
+    var savedArea = sessionStorage.getItem('sharpshooters_area');
+    if (savedArea && AREAS[savedArea]) currentArea = savedArea;
+  } catch (e) {}
+  if (areaSel) areaSel.value = currentArea;
 
   await loadSessions();
   if (currentSession) await loadSession(currentSession);
@@ -1366,7 +1413,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.getElementById('lookupInput').value = saved;
     try {
       var rows = await sbRpc('slate', 'ss_player_lookup',
-        { p_input: saved, p_session_id: currentSession });
+        { p_input: saved, p_session_id: currentSession,
+          p_operator_ids: AREAS[currentArea].operators });
       if (rows && rows.length) renderLookup(rows);
     } catch (e) {}
   }
