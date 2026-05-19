@@ -676,6 +676,8 @@
         </div>
       </div>
 
+      <div id="reportInfo" style="text-align:center; font-size:0.78rem; color:var(--muted); margin: 0 0 10px; display:none;"></div>
+
       <div id="messageContainer"></div>
 
       <section id="resultsCard" class="results-card" style="display: none;">
@@ -720,7 +722,7 @@
 
 /* ── App identity ── */
 const APP_NAME    = 'SharpShooters';
-const APP_VERSION = '1.1';
+const APP_VERSION = '1.2';
 
 /* ── Supabase ── */
 const SB_URL  = 'https://dqzbekoaysgaiqljueac.supabase.co';
@@ -820,6 +822,7 @@ var scopeGroups       = [];     // [{name,divNums:Set,night,has8,has9,isMasters,
 var scopeOptions      = [];     // dropdown options
 var scopeValue        = 'League Leaders';
 var currentMaxWeek    = 0;
+var _reportPrintedAt  = '';     // text from sp_reports.source_printed_at
 var lastReportStamp   = '';     // change-detection key for live refresh
 
 /* ── DOM helpers ── */
@@ -1162,7 +1165,7 @@ async function loadSession(sessionId, isRefresh) {
   try {
     var bdRep = await sbGet('slate',
       'sp_reports?session_id=eq.' + sessionId + '&operator_id=eq.' + OPERATOR_ID +
-      '&report_kind=eq.bd&select=id,week_no&order=uploaded_at.desc&limit=1');
+      '&report_kind=eq.bd&select=id,week_no,source_printed_at&order=uploaded_at.desc&limit=1');
 
     /* All SPM + CRA divisions for the session; applyArea slices it. */
     allDivisions = await sbGet('slate',
@@ -1187,7 +1190,9 @@ async function loadSession(sessionId, isRefresh) {
       }
     });
 
-    currentMaxWeek = (bdRep[0] && bdRep[0].week_no) || 0;
+    currentMaxWeek   = (bdRep[0] && bdRep[0].week_no) || 0;
+    _reportPrintedAt = (bdRep[0] && bdRep[0].source_printed_at) || '';
+    renderReportInfo();
 
     showMessage(null, '');
     await applyArea(currentArea);
@@ -1353,6 +1358,25 @@ async function pollData() {
 function renderFooter() {
   var f = document.getElementById('appFooter');
   if (f) f.textContent = APP_NAME + ' v' + APP_VERSION + ' · South Portland Metro APA';
+}
+
+/* "Report printed 5/19/2026 5:36 PM" — drops the seconds and inserts a
+   space before AM/PM so the timestamp from sp_reports.source_printed_at
+   reads cleanly. Source format example: "5/19/2026 5:36:19PM". */
+function formatPrintedAt(raw) {
+  if (!raw) return '';
+  return String(raw).trim().replace(/(\d):\d\d\s*([AP]M)/i, '$1 $2');
+}
+function renderReportInfo() {
+  var el = document.getElementById('reportInfo');
+  if (!el) return;
+  if (_reportPrintedAt) {
+    el.textContent = 'Report printed ' + formatPrintedAt(_reportPrintedAt);
+    el.style.display = 'block';
+  } else {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
 }
 
 /* ── Init ── */
