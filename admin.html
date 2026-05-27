@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SharpShooters · Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --spm-primary: #ea002a;
+    --spm-accent:  #0031a1;
+    --bg:    #f5f5f5;
+    --card:  #ffffff;
+    --border:#e5e7eb;
+    --border-strong:#d1d5db;
+    --text:  #111827;
+    --muted: #6b7280;
+    --soft:  #f9fafb;
+    --ok:    #16a34a;
+    --warn:  #d97706;
+    --bad:   #dc2626;
+    --spm-color: #0031a1;
+    --cra-color: #047857;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px; line-height: 1.45; }
+  body { visibility: hidden; }
+  body.ready { visibility: visible; }
+  .page { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+  header {
+    border-radius: 12px; padding: 18px 20px 16px; color: #fff;
+    background: linear-gradient(135deg, var(--spm-primary), var(--spm-accent));
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18); margin-bottom: 16px;
+  }
+  header .title { font-size: 1.7rem; font-weight: 900; line-height: 1.1; }
+  header .sub   { font-size: 0.86rem; opacity: 0.86; margin-top: 4px; }
+  header .pill  { display: inline-block; background: rgba(255,255,255,0.22);
+    padding: 3px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700;
+    letter-spacing: 0.04em; text-transform: uppercase; margin-left: 8px; vertical-align: middle; }
+
+  .session-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: var(--card); padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--border); margin-bottom: 14px;
+  }
+  .session-bar label { font-size: 0.78rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em; }
+  .session-bar select { font: inherit; padding: 6px 10px; border: 1px solid var(--border-strong);
+    border-radius: 6px; background: #fff; }
+  .session-bar .generated { margin-left: auto; font-size: 0.74rem; color: var(--muted); }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 1.1rem; margin: 0 0 12px; color: var(--text); }
+  .card h2 .hint { font-size: 0.74rem; font-weight: 500; color: var(--muted);
+    margin-left: 8px; letter-spacing: 0; text-transform: none; }
+  .card-note { font-size: 0.82rem; color: var(--muted); margin-bottom: 10px; }
+
+  /* ── At-a-glance KPIs ───────────────────────────────────────────── */
+  .kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .kpi {
+    background: var(--soft); border-radius: 10px; padding: 14px 16px;
+    border: 1px solid var(--border);
+  }
+  .kpi .label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
+  .kpi .value { font-size: 1.6rem; font-weight: 800; color: var(--text); line-height: 1; }
+  .kpi .sub   { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
+  .kpi.accent  { background: linear-gradient(135deg, #eff6ff, #dbeafe); border-color: #93c5fd; }
+  .kpi.warn    { background: linear-gradient(135deg, #fffbeb, #fef3c7); border-color: #fcd34d; }
+  .kpi.ok      { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-color: #86efac; }
+  .kpi.spm .value { color: var(--spm-color); }
+  .kpi.cra .value { color: var(--cra-color); }
+
+  /* ── Tables ─────────────────────────────────────────────────────── */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+  thead th { background: var(--soft); font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+    border-bottom: 1px solid var(--border); padding: 8px 12px; position: sticky; top: 0; }
+  tbody tr:hover { background: var(--soft); }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.84rem; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 6px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  .badge.spm  { background: #eff6ff; color: var(--spm-color); }
+  .badge.cra  { background: #ecfdf5; color: var(--cra-color); }
+  .badge.code { font-family: ui-monospace,monospace; background: #f3f4f6; color: #111; padding: 2px 9px; min-width: 22px; text-align: center; }
+  .badge.no-patch { background: #fef2f2; color: var(--bad); }
+
+  /* ── Tabs (top earners) ─────────────────────────────────────────── */
+  .tabs { display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 8px; margin-bottom: 12px; width: fit-content; }
+  .tab-btn { background: transparent; border: none; padding: 6px 16px; border-radius: 6px;
+    font: inherit; font-size: 0.84rem; cursor: pointer; color: var(--muted); }
+  .tab-btn.active { background: #fff; color: var(--text); font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  /* ── Loading + gate ─────────────────────────────────────────────── */
+  .gate { max-width: 460px; margin: 80px auto; background: var(--card);
+    border: 1px solid var(--border); padding: 30px; border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06); text-align: center; }
+  .gate h1 { color: var(--bad); margin-bottom: 10px; }
+  .gate p  { color: var(--muted); font-size: 0.92rem; }
+  .gate code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 0.84rem; }
+  .loading { text-align: center; padding: 50px; color: var(--muted); }
+
+  footer { text-align: center; color: var(--muted); font-size: 0.74rem; padding: 14px 0 8px; }
+</style>
+</head>
+<body>
+
+<div id="adminGate" class="gate" style="display:none">
+  <h1>Access denied</h1>
+  <p>This page requires an admin key. Append <code>?key=&lt;service-role JWT&gt;</code> to the URL.</p>
+</div>
+
+<div id="adminMain" class="page" style="display:none">
+
+  <header>
+    <div class="title">
+      SharpShooters
+      <span class="pill">Admin</span>
+    </div>
+    <div class="sub" id="appSub">Loading…</div>
+  </header>
+
+  <div class="session-bar">
+    <label for="sessionSel">Session</label>
+    <select id="sessionSel"></select>
+    <span class="generated" id="generatedAt"></span>
+  </div>
+
+  <div id="bodyContent">
+    <div class="loading">Loading metrics…</div>
+  </div>
+
+  <footer id="appFooter"></footer>
+</div>
+
+<script>
+/* SharpShooters Admin — keep APP_VERSION in lock-step with index.html
+   (both inline since the existing auto-updater scans index.html source
+   for the literal "APP_VERSION = '<x>'" pattern). Bump both files +
+   apa_core.apps row together. */
+const APP_VERSION = '1.5';
+const SB_URL = 'https://dqzbekoaysgaiqljueac.supabase.co';
+const params = new URLSearchParams(location.search);
+const SB_KEY = params.get('key') || '';
+
+if (!SB_KEY) {
+  document.getElementById('adminGate').style.display = 'block';
+  document.body.classList.add('ready');
+}
+
+const HEADERS = {
+  apikey: SB_KEY,
+  Authorization: 'Bearer ' + SB_KEY,
+  'Accept-Profile':  'slate',
+  'Content-Profile': 'slate',
+  'Content-Type':    'application/json'
+};
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function fmt(n) { return (n == null ? '—' : Number(n).toLocaleString()); }
+function pct(n, d) { return d ? Math.round((n / d) * 100) + '%' : '—'; }
+function shortDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+async function fetchMetrics(sessionId) {
+  const r = await fetch(SB_URL + '/rest/v1/rpc/ss_admin_metrics', {
+    method: 'POST', headers: HEADERS,
+    body: JSON.stringify({ p_session_id: sessionId })
+  });
+  if (!r.ok) throw new Error('RPC failed: ' + r.status + ' ' + (await r.text()).slice(0, 200));
+  return r.json();
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   RENDERERS — each takes a slice of the RPC response and returns HTML.
+   ══════════════════════════════════════════════════════════════════════ */
+function renderHeadline(h) {
+  const owedPct = pct(h.patches_owed, h.patches_total);
+  const mailedPct = pct(h.patches_mailed, h.patches_total);
+  return `<div class="card">
+    <h2>At a glance <span class="hint">latest report snapshot · patches table for mailing</span></h2>
+    <div class="kpi-grid">
+      <div class="kpi accent"><div class="label">Total SPs earned</div>
+        <div class="value">${fmt(h.earned_total)}</div>
+        <div class="sub">from latest by-division report</div></div>
+      <div class="kpi spm"><div class="label">SPM earnings</div>
+        <div class="value">${fmt(h.earned_spm)}</div>
+        <div class="sub">${fmt(h.distinct_earners_spm)} distinct earners</div></div>
+      <div class="kpi cra"><div class="label">CRA earnings</div>
+        <div class="value">${fmt(h.earned_cra)}</div>
+        <div class="sub">${fmt(h.distinct_earners_cra)} distinct earners</div></div>
+      <div class="kpi"><div class="label">8-Ball Skunks</div>
+        <div class="value">${fmt(h.eight_skunks)}</div>
+        <div class="sub">no APA patch · separate count</div></div>
+      <div class="kpi ok"><div class="label">Patches mailed</div>
+        <div class="value">${fmt(h.patches_mailed)}</div>
+        <div class="sub">${mailedPct} of ${fmt(h.patches_total)} <em>(SPM only)</em></div></div>
+      <div class="kpi warn"><div class="label">Patches owed</div>
+        <div class="value">${fmt(h.patches_owed)}</div>
+        <div class="sub">${owedPct} of ${fmt(h.patches_total)} <em>(SPM only)</em></div></div>
+    </div>
+  </div>`;
+}
+
+function renderByCode(rows) {
+  const html = rows.map(r => `<tr>
+    <td><span class="badge code">${esc(r.code)}</span></td>
+    <td><strong>${esc(r.label)}</strong>${r.patchable ? '' : ' <span class="badge no-patch">no patch</span>'}</td>
+    <td class="num">${r.spm == null ? '—' : fmt(r.spm)}</td>
+    <td class="num">${r.cra == null ? '—' : fmt(r.cra)}</td>
+    <td class="num"><strong>${fmt(r.total)}</strong></td>
+    <td class="num">${fmt(r.mailed)}</td>
+    <td class="num">${fmt(r.owed)}</td>
+  </tr>`).join('');
+  return `<div class="card">
+    <h2>By SP code <span class="hint">earned counts split by area · patches mailed/owed is SPM only</span></h2>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th style="width:40px">Code</th><th>Special performance</th>
+        <th class="num">SPM</th><th class="num">CRA</th><th class="num">Total</th>
+        <th class="num">Mailed</th><th class="num">Owed</th>
+      </tr></thead>
+      <tbody>${html}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function renderTopEarners(te) {
+  const tab = (rows, key) => {
+    if (!rows || !rows.length) return '<p class="card-note" style="margin-top:8px">No earners in this slice.</p>';
+    const rowsHtml = rows.map((r, i) => `<tr>
+      <td class="num">${i + 1}</td>
+      <td><strong>${esc(r.member_name)}</strong>
+          <span class="mono" style="color:var(--muted)">#${esc(r.member_number)}</span></td>
+      <td>${r.operator_id === 1 ? '<span class="badge spm">SPM</span>' : (r.operator_id === 2 ? '<span class="badge cra">CRA</span>' : '')}</td>
+      <td class="num"><strong>${fmt(r.total)}</strong></td>
+      <td class="num">${r.r || ''}</td>
+      <td class="num">${r.eob || ''}</td>
+      <td class="num">${r.ebr || ''}</td>
+      <td class="num">${r.nos || ''}</td>
+      <td class="num">${r.nbr || ''}</td>
+      <td class="num">${r.k || ''}</td>
+    </tr>`).join('');
+    return `<div class="table-wrap"><table id="top-${key}">
+      <thead><tr>
+        <th style="width:36px">#</th>
+        <th>Player</th><th style="width:60px">Op</th>
+        <th class="num" style="width:60px">Total</th>
+        <th class="num" title="Rackless" style="width:42px">R</th>
+        <th class="num" title="8 on Break" style="width:42px">8</th>
+        <th class="num" title="8-Ball B&R" style="width:42px">x</th>
+        <th class="num" title="9 on Snap" style="width:42px">9</th>
+        <th class="num" title="9-Ball B&R" style="width:42px">n</th>
+        <th class="num" title="9-Ball Skunk" style="width:42px">k</th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table></div>`;
+  };
+  return `<div class="card">
+    <h2>Top earners <span class="hint">top 25 this session</span></h2>
+    <div class="tabs" id="topTabs">
+      <button class="tab-btn active" data-tab="combined">Combined</button>
+      <button class="tab-btn" data-tab="spm">SPM</button>
+      <button class="tab-btn" data-tab="cra">CRA</button>
+    </div>
+    <div data-pane="combined">${tab(te.combined, 'combined')}</div>
+    <div data-pane="spm" style="display:none">${tab(te.spm, 'spm')}</div>
+    <div data-pane="cra" style="display:none">${tab(te.cra, 'cra')}</div>
+  </div>`;
+}
+
+function renderByDivision(rows) {
+  if (!rows || !rows.length) {
+    return `<div class="card"><h2>By division</h2><p class="card-note">No division activity.</p></div>`;
+  }
+  const html = rows.map(r => `<tr>
+    <td class="mono">${esc(r.division_number)}</td>
+    <td><strong>${esc(r.division_name)}</strong></td>
+    <td>${esc(r.format || '')}</td>
+    <td>${esc(r.night_of_play || '')}</td>
+    <td>${r.operator_id === 1 ? '<span class="badge spm">SPM</span>' : (r.operator_id === 2 ? '<span class="badge cra">CRA</span>' : '')}</td>
+    <td class="num"><strong>${fmt(r.total)}</strong></td>
+    <td class="num">${fmt(r.earners)}</td>
+  </tr>`).join('');
+  return `<div class="card">
+    <h2>By division <span class="hint">${rows.length} active divisions this session</span></h2>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Div #</th><th>Name</th><th>Format</th><th>Night</th><th>Op</th>
+        <th class="num">SPs</th><th class="num">Earners</th>
+      </tr></thead>
+      <tbody>${html}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function renderWeekly(rows) {
+  if (!rows || !rows.length) {
+    return `<div class="card"><h2>Weekly trend</h2><p class="card-note">Not enough data.</p></div>`;
+  }
+  const max = Math.max.apply(null, rows.map(r => r.earned));
+  const html = rows.map(r => {
+    const w = max ? Math.round((r.earned / max) * 100) : 0;
+    return `<tr>
+      <td class="mono">${esc(r.week_starting)}</td>
+      <td class="num">${fmt(r.earned)}</td>
+      <td style="width:50%">
+        <div style="background:#e5e7eb;border-radius:4px;height:14px;position:relative">
+          <div style="background:linear-gradient(90deg,var(--spm-accent),#3b82f6);height:14px;width:${w}%;border-radius:4px"></div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  return `<div class="card">
+    <h2>Weekly trend <span class="hint">patches created per week (SPM only)</span></h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Week starting</th><th class="num">Patches</th><th>Distribution</th></tr></thead>
+      <tbody>${html}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function renderMailing(m) {
+  const batches = m.batches || [];
+  const batchRows = batches.length ? batches.map(b => `<tr>
+    <td class="mono" style="color:var(--muted)">${esc(b.id.slice(0, 8))}</td>
+    <td>${esc(shortDate(b.created_at))}</td>
+    <td class="num">${fmt(b.patch_count)}</td>
+    <td class="num">${fmt(b.envelope_count)}</td>
+  </tr>`).join('') : '<tr><td colspan="4" class="card-note" style="text-align:center">No mail batches yet.</td></tr>';
+  return `<div class="card">
+    <h2>Mailing pipeline <span class="hint">SPM only · undone batches excluded</span></h2>
+    <div class="kpi-grid" style="margin-bottom:14px">
+      <div class="kpi"><div class="label">Mail batches</div><div class="value">${fmt(m.batches_total)}</div></div>
+      <div class="kpi ok"><div class="label">Patches mailed</div><div class="value">${fmt(m.patches_total)}</div></div>
+      <div class="kpi"><div class="label">Envelopes used</div><div class="value">${fmt(m.envelopes_total)}</div></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Batch ID</th><th>Created</th><th class="num">Patches</th><th class="num">Envelopes</th></tr></thead>
+      <tbody>${batchRows}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function renderOptOuts(rows) {
+  if (!rows || !rows.length) {
+    return `<div class="card"><h2>Opt-outs</h2><p class="card-note">No active opt-outs.</p></div>`;
+  }
+  const html = rows.map(r => `<tr>
+    <td class="mono">${esc(r.member_number)}</td>
+    <td>${esc(r.member_name || '—')}</td>
+    <td style="font-size:0.78rem;color:var(--muted)">${esc((r.opted_out_types || []).join(', '))}</td>
+    <td class="num">${fmt(r.would_have_earned)}</td>
+    <td style="font-size:0.78rem">${esc(r.note || '')}</td>
+  </tr>`).join('');
+  return `<div class="card">
+    <h2>Opt-outs <span class="hint">${rows.length} member${rows.length === 1 ? '' : 's'} opted out</span></h2>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Member #</th><th>Name</th><th>Types opted out</th>
+        <th class="num">Would have earned</th><th>Note</th>
+      </tr></thead>
+      <tbody>${html}</tbody>
+    </table></div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Page lifecycle
+   ══════════════════════════════════════════════════════════════════════ */
+async function init() {
+  if (!SB_KEY) return;
+  document.getElementById('adminMain').style.display = 'block';
+  document.body.classList.add('ready');
+  document.getElementById('appFooter').textContent =
+    'SharpShooters Admin v' + APP_VERSION;
+
+  let initial;
+  try {
+    // Hit the RPC once with a "best guess" session = the most recent.
+    // We'll get back the list of all sessions for the dropdown.
+    const cur = await fetchMetrics(await currentSessionId());
+    initial = cur;
+  } catch (e) {
+    document.getElementById('bodyContent').innerHTML =
+      '<div class="card"><h2 style="color:var(--bad)">Failed to load</h2><p>' + esc(e.message) + '</p></div>';
+    return;
+  }
+
+  // Build session dropdown from initial response.
+  const sel = document.getElementById('sessionSel');
+  sel.innerHTML = (initial.available_sessions || []).map(s =>
+    `<option value="${s.id}"${s.id === initial.session.id ? ' selected' : ''}>${esc(s.name)}${s.is_current ? ' · current' : ''}</option>`
+  ).join('');
+  sel.onchange = async () => {
+    document.getElementById('bodyContent').innerHTML = '<div class="loading">Loading…</div>';
+    try {
+      const data = await fetchMetrics(parseInt(sel.value, 10));
+      renderAll(data);
+    } catch (e) {
+      document.getElementById('bodyContent').innerHTML =
+        '<div class="card"><h2 style="color:var(--bad)">Failed to load</h2><p>' + esc(e.message) + '</p></div>';
+    }
+  };
+
+  renderAll(initial);
+}
+
+async function currentSessionId() {
+  // Lightweight lookup — we don't have the RPC's session list yet.
+  const r = await fetch(SB_URL + '/rest/v1/sessions?select=id,is_current&order=id.desc', { headers: HEADERS });
+  if (!r.ok) throw new Error('sessions lookup failed');
+  const rows = await r.json();
+  const cur = rows.find(s => s.is_current) || rows[0];
+  return cur ? cur.id : 1;
+}
+
+function renderAll(data) {
+  document.getElementById('appSub').textContent =
+    data.session.name + ' · ' + data.session.season + ' ' + data.session.year +
+    (data.session.is_current ? ' (current)' : '');
+  document.getElementById('generatedAt').textContent =
+    'Generated ' + shortDate(data.generated_at);
+
+  document.getElementById('bodyContent').innerHTML =
+    renderHeadline(data.headline)
+    + renderByCode(data.by_code || [])
+    + renderTopEarners(data.top_earners || {})
+    + renderByDivision(data.by_division || [])
+    + renderWeekly(data.weekly_trend || [])
+    + renderMailing(data.mailing || {})
+    + renderOptOuts(data.opt_outs || []);
+
+  // Wire top-earner tabs.
+  document.querySelectorAll('#topTabs .tab-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('#topTabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('[data-pane]').forEach(p => {
+        p.style.display = (p.dataset.pane === btn.dataset.tab) ? '' : 'none';
+      });
+    };
+  });
+}
+
+init();
+</script>
+</body>
+</html>
