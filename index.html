@@ -722,7 +722,7 @@
 
 /* ── App identity ── */
 const APP_NAME    = 'SharpShooters';
-const APP_VERSION = '1.5';
+const APP_VERSION = '1.51';
 
 /* ── Supabase ── */
 const SB_URL  = 'https://dqzbekoaysgaiqljueac.supabase.co';
@@ -1308,7 +1308,12 @@ async function checkVersion() {
     var rows = await sbGet('apa_core',
       'apps?app_name=eq.' + APP_NAME + '&select=version');
     var remote = rows && rows[0] && rows[0].version;
-    if (remote && remote !== APP_VERSION) showUpdateOverlay(remote);
+    if (remote && remote !== APP_VERSION) {
+      /* 2026-07-02 hardening: remote OLDER than running = deploy window
+         or DB rollback — do not strand the tab in the overlay. */
+      var __r = parseFloat(remote), __l = parseFloat(APP_VERSION);
+      if (!(isFinite(__r) && isFinite(__l) && __r < __l)) showUpdateOverlay(remote);
+    }
   } catch (e) { /* non-fatal */ }
 }
 function showUpdateOverlay(target) {
@@ -1324,20 +1329,37 @@ function showUpdateOverlay(target) {
     + 'text-transform:uppercase;color:#9db4ff;">Updating…</div>'
     + '<div style="font-size:13px;color:#aaa;margin-top:10px;">A new version is live. '
     + 'One moment.</div></div>';
+  ov.id = 'updateOverlay';
   document.body.appendChild(ov);
   pollForDeploy(target);
 }
-function pollForDeploy(target) {
+function pollForDeploy(target, attempt) {
+  attempt = attempt || 0;
+  /* 2026-07-02 hardening: give-up cap — if Pages serves nothing new after
+     ~2 min the deploy is wedged; dismiss the overlay and let the 30s
+     checkVersion cycle retry in the background. */
+  if (attempt >= 40) {
+    console.warn('[updater] deploy not served after ~2min — dismissing overlay, retrying in background');
+    var __ov = document.getElementById('updateOverlay');
+    if (__ov && __ov.parentNode) __ov.parentNode.removeChild(__ov);
+    _updating = false;
+    return;
+  }
   fetch(location.pathname + '?cb=' + Date.now(), { cache: 'no-store' })
     .then(function (r) { return r.text(); })
     .then(function (html) {
-      if (html.indexOf("APP_VERSION = '" + target + "'") !== -1) {
+      var __m = html && html.match(/APP_VERSION\s*=\s*'([0-9.]+)'/);
+        var __served = __m && __m[1];
+        /* 2026-07-02 hardening: reload on ANY served version different from
+           the running one — pinning the target strands the tab when a second
+           bump lands mid-poll. */
+        if (__served && __served !== APP_VERSION) {
         location.replace(location.pathname + '?cb=' + Date.now());
       } else {
-        setTimeout(function () { pollForDeploy(target); }, 3000);
+        setTimeout(function () { pollForDeploy(target, attempt + 1); }, 3000);
       }
     })
-    .catch(function () { setTimeout(function () { pollForDeploy(target); }, 3000); });
+    .catch(function () { setTimeout(function () { pollForDeploy(target, attempt + 1); }, 3000); });
 }
 
 /* ── Live data — re-render when a new report lands ── */
