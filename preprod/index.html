@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SharpShooters — South Portland Metro APA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+      :root {
+        --spm-primary: #ea002a;
+        --spm-accent: #0031a1;
+        --bg: #f5f5f5;
+        --card: #ffffff;
+        --border: #e1e1e1;
+        --text: #1f1f1f;
+        --muted: #888;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      html, body {
+        width: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+        font-size: 16px;
+      }
+
+      /* Hidden until maintenance check passes */
+      body { visibility: hidden; }
+
+      .page {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 12px;
+      }
+
+      /* ── Header ── */
+
+      header {
+        width: 100%;
+        border-radius: 12px;
+        padding: 18px 16px 16px;
+        color: #fff;
+        background: linear-gradient(135deg, var(--spm-primary), var(--spm-accent));
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+        text-align: center;
+        margin-bottom: 14px;
+      }
+
+      .title {
+        font-size: 1.5rem;
+        font-weight: 900;
+        line-height: 1.08;
+      }
+
+      .subtitle-group {
+        display: inline-block;
+        margin-top: 8px;
+      }
+
+      .subtitle {
+        font-size: 1.6rem;
+        font-weight: 400;
+        font-style: italic;
+        opacity: 0.95;
+      }
+
+      .beta-pill {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 3px 14px;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        background: rgba(255,255,255,0.2);
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.5);
+      }
+
+      .header-status {
+        margin: 8px 0 0;
+        font-size: 0.85rem;
+        opacity: 0.9;
+      }
+
+      /* ── Lookup Bar (Playoffs-style) ── */
+      .lookup-bar {
+        display: flex;
+        align-items: center;
+        max-width: 480px;
+        margin: 0 auto 12px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 4px 4px 4px 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      }
+      .lookup-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 1rem;
+        font-family: inherit;
+        background: transparent;
+        color: var(--text);
+        min-width: 0;
+      }
+      .lookup-input::placeholder { color: var(--muted); }
+      .lookup-btn {
+        flex-shrink: 0;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, var(--spm-primary), var(--spm-accent));
+        color: #fff;
+        font-weight: 800;
+        font-size: 0.9rem;
+        cursor: pointer;
+        letter-spacing: 0.05em;
+        font-family: inherit;
+      }
+      .lookup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      /* ── Team Pills ── */
+      .team-pill {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--spm-primary), var(--spm-accent));
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.9rem;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        transition: transform 0.15s, box-shadow 0.15s;
+        text-decoration: none;
+      }
+      .team-pill:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      }
+
+      /* ── Controls Card ── */
+
+      .controls-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 14px;
+      }
+
+      .select-wrapper {
+        position: relative;
+        margin-bottom: 10px;
+      }
+
+      .select-wrapper:last-child {
+        margin-bottom: 0;
+      }
+
+      .select-wrapper select {
+        width: 100%;
+        padding: 10px 36px 10px 14px;
+        font-size: 0.9rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        text-align: center;
+        text-align-last: center;
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        color: var(--text);
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .select-wrapper::after {
+        content: "\25BC";
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.7rem;
+        color: var(--muted);
+        pointer-events: none;
+      }
+
+      .select-wrapper select:focus {
+        border-color: var(--spm-accent);
+        box-shadow: 0 0 0 3px rgba(0, 49, 161, 0.15);
+      }
+
+      /* ── Custom Dropdown (Playoffs-style) ── */
+
+      .scope-picker {
+        width: 100%;
+        max-width: 480px;
+        position: relative;
+        margin: 0 auto;
+      }
+
+      .scope-btn {
+        width: 100%;
+        padding: 12px 40px 12px 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-family: inherit;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        background: var(--card);
+        color: var(--text);
+        cursor: pointer;
+        min-height: 48px;
+        text-align: center;
+        position: relative;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.2s;
+        line-height: 1.3;
+      }
+
+      .scope-btn::after {
+        content: '';
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid var(--muted);
+        transition: transform 0.2s;
+      }
+
+      .scope-picker.open .scope-btn::after {
+        transform: translateY(-50%) rotate(180deg);
+      }
+
+      .scope-btn:focus {
+        outline: none;
+        border-color: var(--spm-accent);
+        box-shadow: 0 0 0 3px rgba(0, 49, 161, 0.15);
+      }
+
+      .scope-btn-line1 {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--muted);
+        font-weight: 400;
+        line-height: 1.2;
+      }
+
+      .scope-btn-line2 {
+        display: block;
+        font-weight: 700;
+        font-size: 0.9375rem;
+        line-height: 1.3;
+      }
+
+      .scope-list {
+        display: none;
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        max-height: 320px;
+        overflow-y: auto;
+        z-index: 100;
+        padding: 4px 0;
+      }
+
+      .scope-list.open { display: block; }
+
+      .scope-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        transition: background 0.15s;
+        text-align: center;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .scope-item:hover {
+        background: rgba(0, 49, 161, 0.06);
+      }
+
+      .scope-item.selected {
+        background: rgba(0, 49, 161, 0.08);
+      }
+
+      .scope-item-line2,
+      .scope-item-single {
+        font-weight: 700;
+        font-size: 0.9375rem;
+        color: var(--text);
+        line-height: 1.3;
+      }
+
+      /* Day-of-week section header in dropdown */
+      .scope-day-header {
+        padding: 10px 16px 4px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        text-align: center;
+      }
+
+      /* ── Messages ── */
+
+      .msg {
+        width: 100%;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 14px;
+        text-align: center;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .msg-error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid rgba(114, 28, 36, 0.2);
+      }
+
+      .msg-info {
+        background: #e8f0fe;
+        color: #1a3b6b;
+        border: 1px solid #c3d4ff;
+      }
+
+      /* ── Results Card ── */
+
+      .results-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 14px;
+      }
+
+      /* ── Leaderboard Grid ── */
+
+      .leaderboard-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .leader-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px 10px;
+      }
+
+      .leader-card-header {
+        text-align: center;
+        margin-bottom: 8px;
+      }
+
+      .leader-sp {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--spm-accent);
+      }
+
+      .leader-count {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--muted);
+      }
+
+      /* ── Name list (centered, wrapped pills) ── */
+
+      .leader-names {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .leader-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, rgba(234, 0, 42, 0.08), rgba(0, 49, 161, 0.08));
+        border: 1px solid rgba(0, 49, 161, 0.15);
+        color: var(--text);
+        font-size: 0.88rem;
+        font-weight: 600;
+      }
+
+      .leader-empty {
+        font-size: 0.82rem;
+        font-style: italic;
+        color: var(--muted);
+        padding: 4px 0;
+      }
+
+      /* ── Fix-It CTA ── */
+
+      .fix-it {
+        display: block;
+        text-align: center;
+        padding: 14px 12px;
+        margin-bottom: 14px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--spm-primary), var(--spm-accent));
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+        text-decoration: none;
+        color: #fff;
+        font-size: 0.88rem;
+        font-weight: 800;
+        line-height: 1.3;
+      }
+
+      .fix-it-sub {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 500;
+        opacity: 0.9;
+        margin-top: 2px;
+      }
+
+      /* ── Footer ── */
+
+      .footer-note {
+        text-align: center;
+        font-size: 0.72rem;
+        color: var(--muted);
+        margin: 20px 0 0;
+        line-height: 1.4;
+      }
+
+      /* ================================================================
+         TABLET OVERRIDES  (768px – 1199px)
+         ================================================================ */
+
+      @media (min-width: 768px) and (max-width: 1199px) {
+        body { background: #e8e8e8; }
+
+        .page {
+          max-width: 620px;
+          padding: 16px;
+        }
+
+        header {
+          border-radius: 16px;
+          padding: 14px 14px 12px;
+          margin-bottom: 10px;
+        }
+        .title { font-size: 1.6rem; }
+        .subtitle { font-size: 1.7rem; }
+        .beta-pill { font-size: 0.65rem; padding: 3px 14px; }
+        .header-status { font-size: 0.82rem; }
+
+        .controls-card { border-radius: 16px; padding: 12px; margin-bottom: 10px; }
+        .select-wrapper select { font-size: 0.88rem; padding: 8px 36px 8px 14px; }
+        .scope-btn { font-size: 0.88rem; padding: 8px 36px 8px 14px; }
+        .scope-btn-line1 { font-size: 0.75rem; }
+        .scope-btn-line2 { font-size: 0.88rem; }
+        .scope-list { border-radius: 14px; }
+        .scope-item { padding: 8px 12px; border-radius: 10px; }
+        .scope-item-line1 { font-size: 0.72rem; }
+        .scope-item-line2 { font-size: 0.88rem; }
+        .scope-item-single { font-size: 0.88rem; }
+
+        .msg { font-size: 0.88rem; border-radius: 16px; padding: 12px; margin-bottom: 10px; }
+
+        .results-card { border-radius: 16px; padding: 10px; margin-bottom: 10px; }
+        .leader-card { border-radius: 14px; padding: 10px 8px; }
+        .leader-sp { font-size: 1rem; }
+        .leader-count { font-size: 1rem; }
+        .leader-badge { font-size: 0.9rem; padding: 5px 12px; }
+        .leader-empty { font-size: 0.82rem; }
+
+        .fix-it { border-radius: 16px; font-size: 0.88rem; padding: 12px 10px; margin-bottom: 10px; }
+        .fix-it-sub { font-size: 0.65rem; }
+        .footer-note { font-size: 0.72rem; margin-top: 20px; }
+      }
+
+      /* ================================================================
+         DESKTOP OVERRIDES  (>= 1200px)
+         ================================================================ */
+
+      @media (min-width: 1200px) {
+        body { background: #e8e8e8; }
+
+        .page {
+          max-width: 900px;
+          padding: 16px 24px;
+        }
+
+        /* ── Desktop header ── */
+        header {
+          border-radius: 12px;
+          padding: 14px 24px 10px;
+          margin-bottom: 10px;
+          box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+        }
+        .title { font-size: 1.75rem; }
+        .subtitle { font-size: 2.1rem; }
+        .subtitle-group { margin-top: 4px; }
+        .beta-pill {
+          margin-top: 3px;
+          padding: 2px 14px;
+          font-size: 0.65rem;
+          letter-spacing: 0.08em;
+        }
+        .header-status { display: none; }
+
+        /* ── Desktop controls — horizontal row ── */
+        .controls-card {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          border-radius: 10px;
+          padding: 10px 12px;
+          margin-bottom: 10px;
+        }
+        .select-wrapper {
+          flex-shrink: 0;
+          margin-bottom: 0;
+        }
+        .select-wrapper select {
+          font-size: 0.82rem;
+          padding: 7px 28px 7px 12px;
+          text-align: left;
+          text-align-last: left;
+        }
+        .select-wrapper::after { font-size: 0.6rem; right: 10px; }
+        .scope-picker {
+          flex: 1;
+          margin-bottom: 0;
+        }
+        .scope-btn {
+          font-size: 0.82rem;
+          padding: 7px 28px 7px 12px;
+          text-align: left;
+        }
+        .scope-btn::after { font-size: 0.6rem; right: 10px; }
+        .scope-btn-line1 { font-size: 0.65rem; }
+        .scope-btn-line2 { font-size: 0.82rem; }
+        .scope-list {
+          border-radius: 10px;
+          padding: 4px;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+        .scope-item {
+          padding: 6px 10px;
+          border-radius: 8px;
+          text-align: left;
+          transition: background 0.1s ease;
+        }
+        .scope-item:hover {
+          background: rgba(0, 49, 161, 0.06);
+        }
+        .scope-item-line1 { font-size: 0.65rem; }
+        .scope-item-line2 { font-size: 0.82rem; }
+        .scope-item-single { font-size: 0.82rem; }
+
+        /* ── Desktop messages ── */
+        .msg {
+          font-size: 0.88rem;
+          border-radius: 10px;
+          padding: 10px 12px;
+          margin-bottom: 10px;
+        }
+
+        /* ── Desktop results — 2-column grid ── */
+        .results-card {
+          border-radius: 10px;
+          padding: 10px;
+          margin-bottom: 10px;
+        }
+        .leaderboard-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+        }
+        .leader-card {
+          border-radius: 10px;
+          padding: 10px 8px;
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .leader-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+        .leader-sp { font-size: 0.88rem; }
+        .leader-count { font-size: 0.88rem; }
+        .leader-badge {
+          font-size: 0.82rem;
+          padding: 4px 10px;
+          transition: transform 0.1s ease;
+        }
+        .leader-badge:hover {
+          transform: scale(1.03);
+        }
+        .leader-empty { font-size: 0.75rem; }
+        .leader-names { gap: 6px; }
+
+        /* ── Desktop CTA + footer ── */
+        .fix-it {
+          border-radius: 10px;
+          font-size: 0.82rem;
+          padding: 10px;
+          margin-bottom: 10px;
+          transition: filter 0.15s ease;
+        }
+        .fix-it:hover { filter: brightness(1.08); }
+        .fix-it-sub { font-size: 0.6rem; }
+        .footer-note { font-size: 0.68rem; margin-top: 14px; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="page">
+      <header>
+        <h1 class="title">South Portland Metro APA</h1>
+        <div class="subtitle-group">
+          <div class="subtitle">SharpShooters</div>
+          <!-- beta pill removed -->
+        </div>
+        <div class="header-status" id="statusText"></div>
+      </header>
+
+      <!-- ── Player Lookup Bar ── -->
+      <form class="lookup-bar" id="lookupForm" autocomplete="off">
+        <input class="lookup-input" id="lookupInput" type="text" placeholder="APA # or Email" aria-label="APA number or email" inputmode="text" />
+        <button class="lookup-btn" id="lookupBtn" type="submit">FIND ME</button>
+      </form>
+      <div id="lookupStatus" style="text-align:center;margin:0 0 8px;font-size:0.9rem;color:var(--muted);"></div>
+      <div id="playerName" style="display:none;text-align:center;font-weight:700;font-size:1.1rem;margin:0 0 8px;"></div>
+      <div id="teamPills" style="display:none;text-align:center;margin:0 auto 16px;max-width:560px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
+      <div id="browseLink" style="display:none;text-align:center;margin:0 0 16px;"><a href="#" style="color:var(--spm-accent);font-size:0.85rem;" onclick="event.preventDefault();document.getElementById('controlsCard').style.display='block';document.getElementById('browseLink').style.display='none';">Browse all divisions</a></div>
+
+      <div class="controls-card" id="controlsCard">
+        <div class="select-wrapper">
+          <select id="areaSelect" aria-label="Area">
+            <option value="spm">South Portland Metro</option>
+            <option value="cra">Columbia River</option>
+            <option value="both">Both Areas</option>
+          </select>
+        </div>
+        <div class="select-wrapper">
+          <select id="sessionSelect">
+            <option value="0">Loading sessions...</option>
+          </select>
+        </div>
+        <div class="scope-picker" id="scopePicker">
+          <div class="scope-btn" id="scopeBtn" tabindex="0">
+            <div class="scope-btn-line2">Loading views...</div>
+          </div>
+          <div class="scope-list" id="scopeList"></div>
+        </div>
+      </div>
+
+      <div id="reportInfo" style="text-align:center; font-size:0.78rem; color:var(--muted); margin: 0 0 10px; display:none;"></div>
+
+      <div id="messageContainer"></div>
+
+      <section id="resultsCard" class="results-card" style="display: none;">
+        <div id="leaderboardContainer" class="leaderboard-grid"></div>
+
+        <div class="footer-note" id="weekNote" style="display:none;font-weight:700;font-size:1rem;color:var(--spm-accent);"></div>
+      </section>
+
+      <a class="fix-it" href="https://bit.ly/SPMFixIt" target="_blank">
+        We missed one? Let us know!
+        <span class="fix-it-sub">Tap here to report a missing one</span>
+      </a>
+      <div class="footer-note" id="appFooter" style="margin-top:10px;"></div>
+    </div>
+
+    <script>
+/* ══════════════════════════════════════════════════════════════════════
+   SharpShooters — SP leaderboard frontend (Supabase-backed, go-forward)
+   ──────────────────────────────────────────────────────────────────────
+   Reads the slate schema of the spm-apa Supabase project directly over
+   PostgREST. No Google Apps Script, no Cloudflare worker.
+
+   DATA SOURCES (schema: slate)
+     sessions ............ session list (anon SELECT policy)
+     sp_reports .......... per-session report metadata; latest ll / bd
+                           report drives the boards (anon ALL policy)
+     sp_all_league_rows .. per-member SP counts → League Leaders
+     sp_by_division_rows . per-member×team SP counts → Division Leaders
+     divisions ........... names / format / night (anon SELECT policy);
+                           SPM = operator_id 1
+     rpc players_by_short  5-digit member# → First "Nickname" Last
+     rpc ss_player_lookup  APA#/email → player + their teams (SECURITY
+                           DEFINER — players/team_memberships stay sealed)
+
+   Leaders are computed client-side: for each SP code, the member(s) with
+   the highest count. Names resolve to First "Nickname" Last via
+   players_by_short, falling back to the report's plain name.
+
+   Auto-update + live data follow the house pattern: poll apa_core.apps
+   for a version bump, poll sp_reports for new uploads and re-render.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── App identity ── */
+const APP_NAME    = 'SharpShooters';
+const APP_VERSION = '1.51';
+
+/* ── Supabase ── */
+const SB_URL  = 'https://dqzbekoaysgaiqljueac.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxemJla29heXNnYWlxbGp1ZWFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNzA5NzgsImV4cCI6MjA5MDc0Njk3OH0.cCdGxZ4zEFzU_r6lWSDeoNWG67Q4MSYCAtpds035dfU';
+const OPERATOR_ID = 1;   // SPM uploads the reports; session list + refresh
+                         // poll filter on this. The leaderboard's area
+                         // scope comes from AREAS below.
+const AREAS = {
+  spm:  { label: 'South Portland Metro', operators: [1] },
+  cra:  { label: 'Columbia River',       operators: [2] },
+  both: { label: 'Both Areas',           operators: [1, 2] }
+};
+
+function sbHeaders(profile) {
+  return {
+    'apikey': SB_ANON,
+    'Authorization': 'Bearer ' + SB_ANON,
+    'Accept-Profile': profile,
+    'Content-Profile': profile,
+    'Content-Type': 'application/json'
+  };
+}
+function sbGet(profile, path) {
+  return fetch(SB_URL + '/rest/v1/' + path, { headers: sbHeaders(profile) })
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' on ' + path);
+      return r.json();
+    });
+}
+/* Paginated GET — PostgREST caps a response at 1000 rows. */
+async function sbGetAll(profile, pathBase) {
+  var out = [], from = 0, size = 1000;
+  for (;;) {
+    var sep = pathBase.indexOf('?') >= 0 ? '&' : '?';
+    var page = await sbGet(profile,
+      pathBase + sep + 'limit=' + size + '&offset=' + from);
+    out = out.concat(page);
+    if (!page.length || page.length < size) break;
+    from += size;
+  }
+  return out;
+}
+function sbRpc(profile, fn, args) {
+  return fetch(SB_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST', headers: sbHeaders(profile), body: JSON.stringify(args || {})
+  }).then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status + ' on rpc/' + fn);
+    return r.json();
+  });
+}
+
+/* ── SP codes ──────────────────────────────────────────────────────────
+   The all-league / by-division reports carry six count columns. Code →
+   column, plus the user-facing label. Grand Slam (g) is derived and not
+   shown, matching the legacy leaderboard. */
+const CODE_COL = {
+  r: 'rackless', '8': 'eight_ob', x: 'eight_br',
+  '9': 'nine_os', n: 'nine_br', k: 'skunk'
+};
+const CODE_LABEL = {
+  r:  '8-Ball Rackless',
+  '8':'8-Ball on the Break',
+  x:  '8-Ball Break & Run',
+  '9':'9-Ball on the Snap',
+  n:  '9-Ball Break & Run',
+  k:  '9-Ball Skunk'
+};
+/* Masters divisions show the same columns relabelled. */
+const MASTERS_LABEL = {
+  '8':'8-Ball on the Break (Masters)',
+  x:  '8-Ball Break & Run (Masters)',
+  '9':'9-Ball on the Snap (Masters)',
+  n:  '9-Ball Break & Run (Masters)'
+};
+const ALL_CODES     = ['r', '8', 'x', '9', 'n', 'k'];
+const EIGHT_CODES   = ['r', '8', 'x'];
+const NINE_CODES    = ['9', 'n', 'k'];
+const MASTERS_CODES = ['8', 'x', '9', 'n'];
+
+const DAY_ORDER = {
+  monday: 0, tuesday: 1, wednesday: 2, thursday: 3,
+  friday: 4, saturday: 5, sunday: 6
+};
+
+/* ── State ── */
+var sessions          = [];     // [{id,name,start_date,is_current}]
+var currentSession    = null;   // id
+var currentArea       = 'spm';  // 'spm' | 'cra' | 'both'
+var allDivisions      = [];     // every SPM + CRA division for the session
+var divisions         = [];     // current-area subset of allDivisions
+var allBdRows         = [];     // every bd row for the latest bd report
+var bdRows            = [];     // current-area subset of allBdRows
+var _operatorByDivNum = {};     // division_number → operator_id
+var reportNameMap     = {};     // member_number → plain report name (fallback)
+var nameCache         = {};     // member_number → First "Nickname" Last
+var scopeGroups       = [];     // [{name,divNums:Set,night,has8,has9,isMasters,minNum}]
+var scopeOptions      = [];     // dropdown options
+var scopeValue        = 'League Leaders';
+var currentMaxWeek    = 0;
+var _reportPrintedAt  = '';     // text from sp_reports.source_printed_at
+var lastReportStamp   = '';     // change-detection key for live refresh
+
+/* ── DOM helpers ── */
+function esc(s) { return String(s == null ? '' : s); }
+function setStatus(t) {
+  document.getElementById('statusText').textContent = t || '';
+}
+function showMessage(type, text) {
+  var c = document.getElementById('messageContainer');
+  c.innerHTML = '';
+  if (!text) return;
+  var d = document.createElement('div');
+  d.className = 'msg ' + (type === 'error' ? 'msg-error' : 'msg-info');
+  d.textContent = text;
+  c.appendChild(d);
+}
+function clearResults() {
+  document.getElementById('leaderboardContainer').innerHTML = '';
+  document.getElementById('resultsCard').style.display = 'none';
+}
+
+/* ── Render ── */
+function renderLeaderboard(board) {
+  clearResults();
+  var container = document.getElementById('leaderboardContainer');
+
+  var weekNote = document.getElementById('weekNote');
+  if (currentMaxWeek && currentMaxWeek > 0) {
+    weekNote.textContent = 'Includes scoresheets through Week ' + currentMaxWeek;
+    weekNote.style.display = 'block';
+  } else {
+    weekNote.style.display = 'none';
+  }
+
+  var items = board.items || [];
+  if (!items.length) {
+    var empty = document.createElement('div');
+    empty.textContent = 'No leaders recorded yet.';
+    empty.style.cssText = 'font-size:0.9rem;color:var(--muted);text-align:center;padding:20px 0;';
+    container.appendChild(empty);
+  } else {
+    items.forEach(function (item) { container.appendChild(buildLeaderCard(item)); });
+  }
+  document.getElementById('resultsCard').style.display = 'block';
+}
+
+var EMPTY_MSGS = [
+  'Wide open — be the first!', 'Unclaimed! Your name here?',
+  'No one yet… your move.', 'Still up for grabs!',
+  'The throne is empty. Take it.', 'Waiting for a legend…',
+  'Nobody? Somebody step up!', 'This spot has your name on it.',
+  'First one here gets bragging rights.', 'Crickets… for now.',
+  'Be the one they talk about.', 'All yours if you want it.',
+  'Ghost town. Go claim it.', "The table is set. Who's sitting down?",
+  'Zero heroes so far. Change that.'
+];
+function buildLeaderCard(item) {
+  var card = document.createElement('article');
+  card.className = 'leader-card';
+
+  var header = document.createElement('div');
+  header.className = 'leader-card-header';
+  var spEl = document.createElement('span');
+  spEl.className = 'leader-sp';
+  spEl.textContent = item.spDescription || '';
+  header.appendChild(spEl);
+  if (item.count) {
+    var countEl = document.createElement('span');
+    countEl.className = 'leader-count';
+    countEl.textContent = ' (' + item.count + ')';
+    header.appendChild(countEl);
+  }
+  card.appendChild(header);
+
+  var namesDiv = document.createElement('div');
+  namesDiv.className = 'leader-names';
+  if (!item.leaders || !item.leaders.length) {
+    var emptyEl = document.createElement('div');
+    emptyEl.className = 'leader-empty';
+    emptyEl.textContent = EMPTY_MSGS[Math.floor(Math.random() * EMPTY_MSGS.length)];
+    namesDiv.appendChild(emptyEl);
+  } else {
+    item.leaders.forEach(function (name) {
+      var badge = document.createElement('span');
+      badge.className = 'leader-badge';
+      badge.textContent = name;
+      namesDiv.appendChild(badge);
+    });
+  }
+  card.appendChild(namesDiv);
+  return card;
+}
+
+/* ── Name resolution ──────────────────────────────────────────────────
+   Report rows carry a plain name; players_by_short upgrades it to
+   First "Nickname" Last. Resolved lazily, in batches, for whoever is
+   actually a leader on the visible board. */
+async function resolveNames(memberNums) {
+  var need = [];
+  memberNums.forEach(function (m) {
+    if (m && !(m in nameCache) && need.indexOf(m) < 0) need.push(m);
+  });
+  if (!need.length) return;
+  try {
+    var players = await sbRpc('slate', 'players_by_short', { p_nums: need });
+    (players || []).forEach(function (pl) {
+      var f  = (pl.first_name || '').trim();
+      var l  = (pl.last_name  || '').trim();
+      var nk = (pl.nickname   || '').trim();
+      var full = (nk ? f + ' "' + nk + '" ' + l : f + ' ' + l)
+        .replace(/\s+/g, ' ').trim();
+      if (full) nameCache[pl.short_number] = full;
+    });
+  } catch (e) {
+    console.warn('[names] lookup failed', e);
+  }
+  /* Cache misses too, so a missing player is not refetched every render. */
+  need.forEach(function (m) { if (!(m in nameCache)) nameCache[m] = null; });
+}
+function displayName(m) {
+  return nameCache[m] || reportNameMap[m] || ('Member #' + m);
+}
+
+/* ── Leader computation ── */
+function aggregateByMember(rows) {
+  var map = {};
+  rows.forEach(function (r) {
+    var m = r.member_number;
+    if (!m) return;
+    if (!map[m]) {
+      map[m] = { member_number: m };
+      ALL_CODES.forEach(function (c) { map[m][CODE_COL[c]] = 0; });
+    }
+    ALL_CODES.forEach(function (c) {
+      var col = CODE_COL[c];
+      map[m][col] += (r[col] || 0);
+    });
+  });
+  return Object.keys(map).map(function (k) { return map[k]; });
+}
+/* Highest count for one column → { count, members:[member_number] }. */
+function leadersFor(aggRows, col) {
+  var max = 0;
+  aggRows.forEach(function (r) { if ((r[col] || 0) > max) max = r[col] || 0; });
+  if (max <= 0) return { count: 0, members: [] };
+  var members = aggRows.filter(function (r) { return (r[col] || 0) === max; })
+    .map(function (r) { return r.member_number; });
+  return { count: max, members: members };
+}
+function computeLeague() {
+  /* Aggregate the current area's bd rows by member; the all-league report
+     is no longer used so the League board respects the area selector. */
+  var agg = aggregateByMember(bdRows);
+  var items = ALL_CODES.map(function (code) {
+    var res = leadersFor(agg, CODE_COL[code]);
+    return { label: CODE_LABEL[code], count: res.count, members: res.members };
+  });
+  return { title: 'League Leaders', items: items };
+}
+function computeDivision(group) {
+  var rows = bdRows.filter(function (r) { return group.divNums.has(r.division_number); });
+  var agg = aggregateByMember(rows);
+  var codes = group.isMasters ? MASTERS_CODES
+            : (group.has8 && group.has9) ? ALL_CODES
+            : group.has8 ? EIGHT_CODES
+            : group.has9 ? NINE_CODES : ALL_CODES;
+  var items = codes.map(function (code) {
+    var res = leadersFor(agg, CODE_COL[code]);
+    var label = group.isMasters ? (MASTERS_LABEL[code] || CODE_LABEL[code])
+                                : CODE_LABEL[code];
+    return { label: label, count: res.count, members: res.members };
+  });
+  return { title: group.name, items: items };
+}
+
+/* ── Scope groups ─────────────────────────────────────────────────────
+   A "8 Ball" / "9 Ball" pair under one base name (Double Jeopardy) is
+   collapsed to a single scope, e.g. West Hills 8 Ball + West Hills 9 Ball
+   → "West Hills". */
+function baseName(name) {
+  var b = String(name || '').replace(/\s*(8[- ]?Ball|9[- ]?Ball)\s*(Open)?$/i, '').trim();
+  return b || String(name || '');
+}
+function buildScopeGroups() {
+  var map = {};
+  divisions.forEach(function (d) {
+    var base = baseName(d.name);
+    if (!map[base]) {
+      map[base] = {
+        name: base, divNums: new Set(), night: d.night_of_play || '',
+        has8: false, has9: false, isMasters: false, minNum: 9999
+      };
+    }
+    var g = map[base];
+    g.divNums.add(d.division_number);
+    if (!g.night && d.night_of_play) g.night = d.night_of_play;
+    var fmt = (d.format || '').toLowerCase();
+    if (fmt.indexOf('master') >= 0 || base.toLowerCase().indexOf('master') >= 0) g.isMasters = true;
+    if (fmt.indexOf('8') >= 0) g.has8 = true;
+    if (fmt.indexOf('9') >= 0) g.has9 = true;
+    var num = parseInt(d.division_number, 10);
+    if (!isNaN(num) && num < g.minNum) g.minNum = num;
+  });
+  var groups = Object.keys(map).map(function (k) { return map[k]; });
+  groups.sort(function (a, b) {
+    var da = dayIdx(a.night), db = dayIdx(b.night);
+    if (da !== db) return da - db;
+    return a.minNum - b.minNum;
+  });
+  return groups;
+}
+function dayIdx(night) {
+  if (!night) return 99;
+  var key = night.toLowerCase().replace(/s$/, '');
+  for (var d in DAY_ORDER) {
+    if (d.indexOf(key) === 0 || key.indexOf(d) === 0) return DAY_ORDER[d];
+  }
+  return 99;
+}
+function buildScopeOptions() {
+  scopeOptions = [{ value: 'League Leaders', line1: '', line2: 'League Leaders' }];
+  scopeGroups.forEach(function (g) {
+    scopeOptions.push({ value: g.name, line1: g.night || '', line2: g.name });
+  });
+}
+
+/* ── Scope picker UI ── */
+function updateScopeBtn(opt) {
+  var btn = document.getElementById('scopeBtn');
+  btn.innerHTML = '';
+  if (opt.line1) {
+    var l1 = document.createElement('div');
+    l1.className = 'scope-btn-line1';
+    l1.textContent = opt.line1;
+    btn.appendChild(l1);
+  }
+  var l2 = document.createElement('div');
+  l2.className = 'scope-btn-line2';
+  l2.textContent = opt.line2;
+  btn.appendChild(l2);
+}
+function buildScopeList() {
+  var list = document.getElementById('scopeList');
+  list.innerHTML = '';
+  var lastDay = '';
+  scopeOptions.forEach(function (opt) {
+    if (opt.line1 && opt.line1 !== lastDay) {
+      var dh = document.createElement('div');
+      dh.className = 'scope-day-header';
+      dh.textContent = opt.line1;
+      list.appendChild(dh);
+      lastDay = opt.line1;
+    }
+    var item = document.createElement('div');
+    item.className = 'scope-item';
+    if (opt.value === scopeValue) item.classList.add('selected');
+    var nameEl = document.createElement('div');
+    nameEl.className = opt.line1 ? 'scope-item-line2' : 'scope-item-single';
+    nameEl.textContent = opt.line2;
+    item.appendChild(nameEl);
+    item.addEventListener('click', function () {
+      scopeValue = opt.value;
+      updateScopeBtn(opt);
+      closeScopeList();
+      showBoardForScope();
+    });
+    list.appendChild(item);
+  });
+}
+function toggleScopeList() {
+  var list = document.getElementById('scopeList');
+  if (list.classList.contains('open')) { closeScopeList(); return; }
+  buildScopeList();
+  list.classList.add('open');
+  document.getElementById('scopePicker').classList.add('open');
+}
+function closeScopeList() {
+  document.getElementById('scopeList').classList.remove('open');
+  document.getElementById('scopePicker').classList.remove('open');
+}
+
+/* ── Render the board for the current scope ── */
+async function showBoardForScope() {
+  var board;
+  if (scopeValue === 'League Leaders') {
+    board = computeLeague();
+  } else {
+    var group = scopeGroups.filter(function (g) { return g.name === scopeValue; })[0];
+    board = group ? computeDivision(group)
+                  : { title: scopeValue, items: [] };
+  }
+  var members = [];
+  board.items.forEach(function (it) {
+    it.members.forEach(function (m) { members.push(m); });
+  });
+  await resolveNames(members);
+  var items = board.items.map(function (it) {
+    return {
+      spDescription: it.label,
+      count: it.count,
+      leaders: it.members.map(displayName).sort()
+    };
+  });
+  renderLeaderboard({ title: board.title, items: items });
+}
+
+/* ── Session loading ── */
+async function loadSessions() {
+  /* Only sessions that actually have an SPM SP report. */
+  var sel = document.getElementById('sessionSelect');
+  try {
+    var all = await sbGet('slate',
+      'sessions?select=id,name,start_date,is_current&order=start_date.desc');
+    var reps = await sbGet('slate',
+      'sp_reports?operator_id=eq.' + OPERATOR_ID + '&select=session_id');
+    var withData = {};
+    reps.forEach(function (r) { withData[r.session_id] = true; });
+    sessions = all.filter(function (s) { return withData[s.id]; });
+    if (!sessions.length) sessions = all;   // fail-soft
+    sel.innerHTML = '';
+    sessions.forEach(function (s) {
+      var opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      sel.appendChild(opt);
+    });
+    var def = sessions.filter(function (s) { return s.is_current; })[0]
+            || sessions[0];
+    if (def) { sel.value = def.id; currentSession = def.id; }
+  } catch (e) {
+    console.warn('[sessions] load failed', e);
+    sel.innerHTML = '<option value="">Current Session</option>';
+  }
+}
+
+async function loadSession(sessionId, isRefresh) {
+  currentSession = sessionId;
+  if (!isRefresh) showMessage('info', 'Loading leaderboard…');
+
+  try {
+    var bdRep = await sbGet('slate',
+      'sp_reports?session_id=eq.' + sessionId + '&operator_id=eq.' + OPERATOR_ID +
+      '&report_kind=eq.bd&select=id,week_no,source_printed_at,data_through&order=uploaded_at.desc&limit=1');
+
+    /* All SPM + CRA divisions for the session; applyArea slices it. */
+    allDivisions = await sbGet('slate',
+      'divisions?session_id=eq.' + sessionId +
+      '&select=division_number,name,format,night_of_play,operator_id&order=division_number');
+    _operatorByDivNum = {};
+    allDivisions.forEach(function (d) {
+      _operatorByDivNum[d.division_number] = d.operator_id;
+    });
+
+    /* All bd rows for the latest report — SPM's report covers both areas. */
+    allBdRows = bdRep.length
+      ? await sbGetAll('slate',
+          'sp_by_division_rows?report_id=eq.' + bdRep[0].id +
+          '&select=division_number,team_number,member_number,member_name,rackless,eight_ob,eight_br,nine_os,nine_br,skunk')
+      : [];
+
+    reportNameMap = {};
+    allBdRows.forEach(function (r) {
+      if (r.member_number && r.member_name && !reportNameMap[r.member_number]) {
+        reportNameMap[r.member_number] = r.member_name;
+      }
+    });
+
+    currentMaxWeek   = (bdRep[0] && bdRep[0].week_no) || 0;
+    /* Prefer the operator's "data through" date; fall back to the
+       report's auto-extracted print timestamp. */
+    _reportPrintedAt = (bdRep[0] && (bdRep[0].data_through || bdRep[0].source_printed_at)) || '';
+    renderReportInfo();
+
+    showMessage(null, '');
+    await applyArea(currentArea);
+  } catch (e) {
+    console.error('[session] load failed', e);
+    showMessage('error', 'Could not load the leaderboard. Please try again.');
+  }
+}
+
+async function applyArea(areaKey) {
+  /* Filter divisions + bd rows to the picked area's operator(s), rebuild
+     the scope picker, and re-render the board. Called on session change
+     and area-select change. */
+  if (!AREAS[areaKey]) areaKey = 'spm';
+  currentArea = areaKey;
+  try { sessionStorage.setItem('sharpshooters_area', areaKey); } catch (e) {}
+
+  var ops = new Set(AREAS[areaKey].operators);
+  divisions = allDivisions.filter(function (d) { return ops.has(d.operator_id); });
+  bdRows    = allBdRows.filter(function (r) { return ops.has(_operatorByDivNum[r.division_number]); });
+
+  scopeGroups = buildScopeGroups();
+  buildScopeOptions();
+
+  /* Keep the current scope if it still exists in the new area; otherwise
+     fall back to League. */
+  var stillValid = scopeOptions.some(function (o) { return o.value === scopeValue; });
+  if (!stillValid) scopeValue = 'League Leaders';
+  var opt = scopeOptions.filter(function (o) { return o.value === scopeValue; })[0]
+          || scopeOptions[0];
+  if (opt) updateScopeBtn(opt);
+
+  await showBoardForScope();
+}
+
+/* ── Player lookup ── */
+async function handleLookup() {
+  var input = document.getElementById('lookupInput').value.trim();
+  if (!input || !currentSession) return;
+  var btn = document.getElementById('lookupBtn');
+  var statusEl = document.getElementById('lookupStatus');
+  var nameEl = document.getElementById('playerName');
+  var pillsEl = document.getElementById('teamPills');
+
+  btn.disabled = true;
+  statusEl.textContent = 'Searching…';
+  nameEl.style.display = 'none';
+  pillsEl.style.display = 'none';
+  pillsEl.innerHTML = '';
+
+  try {
+    var rows = await sbRpc('slate', 'ss_player_lookup',
+      { p_input: input, p_session_id: currentSession,
+        p_operator_ids: AREAS[currentArea].operators });
+    btn.disabled = false;
+
+    if (!rows || !rows.length) {
+      statusEl.textContent = 'Not found. Try a different APA # or email.';
+      return;
+    }
+    statusEl.textContent = '';
+    try { sessionStorage.setItem('sharpshooters_lastInput', input); } catch (e) {}
+    renderLookup(rows);
+  } catch (e) {
+    btn.disabled = false;
+    statusEl.textContent = 'Lookup failed. Please try again.';
+  }
+}
+function renderLookup(rows) {
+  var nameEl = document.getElementById('playerName');
+  var pillsEl = document.getElementById('teamPills');
+  var p = rows[0];
+  var nk = (p.nickname || '').trim();
+  var full = (nk ? p.first_name + ' "' + nk + '" ' + p.last_name
+                 : p.first_name + ' ' + p.last_name).replace(/\s+/g, ' ').trim();
+  nameEl.textContent = full;
+  nameEl.style.display = 'block';
+
+  pillsEl.innerHTML = '';
+  pillsEl.style.display = 'flex';
+  var seen = {};
+  rows.forEach(function (r) {
+    if (!r.team_number) return;
+    var base = baseName(r.division_name);
+    var key = (r.team_name || '') + '|' + base;
+    if (seen[key]) return;
+    seen[key] = true;
+    var pill = document.createElement('span');
+    pill.className = 'team-pill';
+    pill.textContent = r.team_name || ('Team ' + r.team_number);
+    pill.addEventListener('click', (function (name) {
+      return function () {
+        scopeValue = name;
+        var opt = scopeOptions.filter(function (o) { return o.value === name; })[0]
+                || { line1: '', line2: name };
+        updateScopeBtn(opt);
+        showBoardForScope();
+        document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    })(base));
+    pillsEl.appendChild(pill);
+  });
+  document.getElementById('browseLink').style.display = 'block';
+}
+
+/* ── Auto-update — poll apa_core.apps for a version bump ── */
+var _updating = false;
+async function checkVersion() {
+  if (_updating) return;
+  try {
+    var rows = await sbGet('apa_core',
+      'apps?app_name=eq.' + APP_NAME + '&select=version');
+    var remote = rows && rows[0] && rows[0].version;
+    if (remote && remote !== APP_VERSION) {
+      /* 2026-07-02 hardening: remote OLDER than running = deploy window
+         or DB rollback — do not strand the tab in the overlay. */
+      var __r = parseFloat(remote), __l = parseFloat(APP_VERSION);
+      if (!(isFinite(__r) && isFinite(__l) && __r < __l)) showUpdateOverlay(remote);
+    }
+  } catch (e) { /* non-fatal */ }
+}
+function showUpdateOverlay(target) {
+  if (_updating) return;
+  _updating = true;
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(17,17,17,0.94);'
+    + 'display:flex;align-items:center;justify-content:center;'
+    + 'font-family:system-ui,-apple-system,sans-serif;color:#fff;text-align:center;padding:24px;';
+  ov.innerHTML = '<div><div style="font-size:34px;font-weight:900;font-style:italic;'
+    + 'color:#ea002a;margin-bottom:14px;">SharpShooters</div>'
+    + '<div style="font-size:16px;font-weight:600;letter-spacing:0.12em;'
+    + 'text-transform:uppercase;color:#9db4ff;">Updating…</div>'
+    + '<div style="font-size:13px;color:#aaa;margin-top:10px;">A new version is live. '
+    + 'One moment.</div></div>';
+  ov.id = 'updateOverlay';
+  document.body.appendChild(ov);
+  pollForDeploy(target);
+}
+function pollForDeploy(target, attempt) {
+  attempt = attempt || 0;
+  /* 2026-07-02 hardening: give-up cap — if Pages serves nothing new after
+     ~2 min the deploy is wedged; dismiss the overlay and let the 30s
+     checkVersion cycle retry in the background. */
+  if (attempt >= 40) {
+    console.warn('[updater] deploy not served after ~2min — dismissing overlay, retrying in background');
+    var __ov = document.getElementById('updateOverlay');
+    if (__ov && __ov.parentNode) __ov.parentNode.removeChild(__ov);
+    _updating = false;
+    return;
+  }
+  fetch(location.pathname + '?cb=' + Date.now(), { cache: 'no-store' })
+    .then(function (r) { return r.text(); })
+    .then(function (html) {
+      var __m = html && html.match(/APP_VERSION\s*=\s*'([0-9.]+)'/);
+        var __served = __m && __m[1];
+        /* 2026-07-02 hardening: reload on ANY served version different from
+           the running one — pinning the target strands the tab when a second
+           bump lands mid-poll. */
+        if (__served && __served !== APP_VERSION) {
+        location.replace(location.pathname + '?cb=' + Date.now());
+      } else {
+        setTimeout(function () { pollForDeploy(target, attempt + 1); }, 3000);
+      }
+    })
+    .catch(function () { setTimeout(function () { pollForDeploy(target, attempt + 1); }, 3000); });
+}
+
+/* ── Live data — re-render when a new report lands ── */
+async function pollData() {
+  if (_updating || !currentSession) return;
+  if (document.getElementById('scopeList').classList.contains('open')) return;
+  try {
+    var reps = await sbGet('slate',
+      'sp_reports?session_id=eq.' + currentSession + '&operator_id=eq.' + OPERATOR_ID +
+      '&select=id,uploaded_at&order=uploaded_at.desc&limit=1');
+    var stamp = reps && reps[0] ? (reps[0].id + '|' + reps[0].uploaded_at) : '';
+    if (stamp && lastReportStamp && stamp !== lastReportStamp) {
+      await loadSession(currentSession, true);
+    }
+    if (stamp) lastReportStamp = stamp;
+  } catch (e) { /* non-fatal */ }
+}
+
+/* ── Footer ── */
+function renderFooter() {
+  var f = document.getElementById('appFooter');
+  if (f) f.textContent = APP_NAME + ' v' + APP_VERSION + ' · South Portland Metro APA';
+}
+
+/* Format the "Last updated" line. Two upstream shapes:
+     - data_through (date column): "YYYY-MM-DD" → "M/D/YYYY"
+     - source_printed_at (text):   "5/19/2026 5:36:19PM" → "5/19/2026 5:36 PM" */
+function formatPrintedAt(raw) {
+  if (!raw) return '';
+  var s = String(raw).trim();
+  var iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return parseInt(iso[2], 10) + '/' + parseInt(iso[3], 10) + '/' + iso[1];
+  return s.replace(/(\d):\d\d\s*([AP]M)/i, '$1 $2');
+}
+/* The label has to say WHICH fact the date is, because the two sources mean
+   different things and "Last updated" was read as neither of them.
+
+   data_through is the last day of play the APA report covers; source_printed_at
+   is when the report was printed. Both were labelled "Last updated", which reads
+   as "this page was refreshed on that date" — so a report covering play through
+   the 15th, uploaded on the 18th, looked three days stale when it was current.
+   That misreading cost a real staleness investigation on 2026-07-19. */
+function reportInfoLabel(raw) {
+  // A bare YYYY-MM-DD is data_through; anything else is the printed timestamp.
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(raw).trim())
+    ? 'Results through ' : 'Report printed ';
+}
+function renderReportInfo() {
+  var el = document.getElementById('reportInfo');
+  if (!el) return;
+  if (_reportPrintedAt) {
+    el.textContent = reportInfoLabel(_reportPrintedAt) + formatPrintedAt(_reportPrintedAt);
+    el.style.display = 'block';
+  } else {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', async function () {
+  renderFooter();
+  document.body.style.visibility = 'visible';
+
+  document.getElementById('scopeBtn').addEventListener('click', toggleScopeList);
+  document.addEventListener('click', function (e) {
+    if (!document.getElementById('scopePicker').contains(e.target)) closeScopeList();
+  });
+  document.getElementById('sessionSelect').addEventListener('change', function () {
+    var id = parseInt(this.value, 10);
+    if (!isNaN(id)) loadSession(id);
+  });
+  /* Area selector — re-slices the divisions + bd rows already in memory
+     and re-renders. If a player lookup is up, re-run it with the new
+     operator filter so the team pills match the chosen area. */
+  var areaSel = document.getElementById('areaSelect');
+  if (areaSel) {
+    areaSel.value = currentArea;
+    areaSel.addEventListener('change', async function () {
+      await applyArea(this.value);
+      var saved = '';
+      try { saved = sessionStorage.getItem('sharpshooters_lastInput') || ''; } catch (e) {}
+      if (saved && document.getElementById('playerName').style.display !== 'none') {
+        document.getElementById('lookupInput').value = saved;
+        handleLookup();
+      }
+    });
+  }
+  document.getElementById('lookupForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    handleLookup();
+  });
+
+  /* Restore saved area before loading data so the first paint is correct. */
+  try {
+    var savedArea = sessionStorage.getItem('sharpshooters_area');
+    if (savedArea && AREAS[savedArea]) currentArea = savedArea;
+  } catch (e) {}
+  if (areaSel) areaSel.value = currentArea;
+
+  await loadSessions();
+  if (currentSession) await loadSession(currentSession);
+
+  /* Prime the change-detection stamp + auto-lookup the saved player. */
+  try {
+    var reps = await sbGet('slate',
+      'sp_reports?session_id=eq.' + currentSession + '&operator_id=eq.' + OPERATOR_ID +
+      '&select=id,uploaded_at&order=uploaded_at.desc&limit=1');
+    if (reps && reps[0]) lastReportStamp = reps[0].id + '|' + reps[0].uploaded_at;
+  } catch (e) {}
+
+  var saved = null;
+  try { saved = sessionStorage.getItem('sharpshooters_lastInput'); } catch (e) {}
+  if (saved && currentSession) {
+    document.getElementById('lookupInput').value = saved;
+    try {
+      var rows = await sbRpc('slate', 'ss_player_lookup',
+        { p_input: saved, p_session_id: currentSession,
+          p_operator_ids: AREAS[currentArea].operators });
+      if (rows && rows.length) renderLookup(rows);
+    } catch (e) {}
+  }
+
+  setInterval(checkVersion, 30000);
+  setInterval(pollData, 30000);
+  checkVersion();
+});
+
+    </script>
+  </body>
+</html>
