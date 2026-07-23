@@ -207,6 +207,12 @@
         margin: 0 auto;
       }
 
+      .copy-link-btn {
+        margin-top: 8px; font-family: inherit; font-size: 0.8rem; cursor: pointer;
+        background: none; border: 1px solid var(--border); border-radius: 10px;
+        padding: 7px 14px; color: var(--muted); }
+      .copy-link-btn:hover { border-color: var(--spm-accent); color: var(--spm-accent); }
+      .copy-link-btn.copied { border-color: #16a34a; color: #16a34a; }
       .scope-btn {
         width: 100%;
         padding: 12px 40px 12px 16px;
@@ -674,6 +680,7 @@
           </div>
           <div class="scope-list" id="scopeList"></div>
         </div>
+        <button type="button" id="copyLinkBtn" class="copy-link-btn" title="Copy a direct link to this division">🔗 Link</button>
       </div>
 
       <div id="reportInfo" style="text-align:center; font-size:0.78rem; color:var(--muted); margin: 0 0 10px; display:none;"></div>
@@ -722,7 +729,7 @@
 
 /* ── App identity ── */
 const APP_NAME    = 'SharpShooters';
-const APP_VERSION = '1.51';
+const APP_VERSION = '1.6';
 
 /* ── Supabase ── */
 const SB_URL  = 'https://dqzbekoaysgaiqljueac.supabase.co';
@@ -821,6 +828,7 @@ var nameCache         = {};     // member_number → First "Nickname" Last
 var scopeGroups       = [];     // [{name,divNums:Set,night,has8,has9,isMasters,minNum}]
 var scopeOptions      = [];     // dropdown options
 var scopeValue        = 'League Leaders';
+var _pendingUrlScope  = null;   // ?div= to honor once, on first load
 var currentMaxWeek    = 0;
 var _reportPrintedAt  = '';     // text from sp_reports.source_printed_at
 var lastReportStamp   = '';     // change-detection key for live refresh
@@ -1067,30 +1075,69 @@ function updateScopeBtn(opt) {
 function buildScopeList() {
   var list = document.getElementById('scopeList');
   list.innerHTML = '';
-  var lastDay = '';
+  var lastDay = null;
   scopeOptions.forEach(function (opt) {
-    if (opt.line1 && opt.line1 !== lastDay) {
+    /* A division with no night in the data (night_of_play NULL — Skyline is
+       one) must get its OWN header, not silently inherit the previous day's.
+       The old test skipped the header whenever line1 was empty, so a null-night
+       group sorted to the end and appeared under Sunday (the last real day).
+       League Leaders (line1 '' AND line2 'League Leaders') stays header-less by
+       being excluded here. */
+    var day = opt.value === 'League Leaders' ? null : (opt.line1 || 'Night not set');
+    if (day !== null && day !== lastDay) {
       var dh = document.createElement('div');
       dh.className = 'scope-day-header';
-      dh.textContent = opt.line1;
+      dh.textContent = day;
       list.appendChild(dh);
-      lastDay = opt.line1;
+      lastDay = day;
     }
     var item = document.createElement('div');
     item.className = 'scope-item';
     if (opt.value === scopeValue) item.classList.add('selected');
     var nameEl = document.createElement('div');
-    nameEl.className = opt.line1 ? 'scope-item-line2' : 'scope-item-single';
+    /* Items under a night header (including the "Night not set" bucket) use the
+       indented style; only League Leaders, which has no header, is single. */
+    nameEl.className = day !== null ? 'scope-item-line2' : 'scope-item-single';
     nameEl.textContent = opt.line2;
     item.appendChild(nameEl);
     item.addEventListener('click', function () {
       scopeValue = opt.value;
       updateScopeBtn(opt);
       closeScopeList();
+      syncScopeToUrl();
       showBoardForScope();
     });
     list.appendChild(item);
   });
+}
+/* ── Direct links (v1.6) ──────────────────────────────────────────────────
+   Every view is now addressable by URL, so a division leaderboard can be
+   shared or bookmarked. ?div=<name> selects a division scope, ?div=league the
+   League Leaders view; ?area= and ?session= carry the other two selectors.
+   The URL is kept in step as the operator navigates (replaceState, so it does
+   not spam browser history), and the 🔗 button copies the current one. */
+function syncScopeToUrl() {
+  try {
+    var u = new URL(window.location.href);
+    if (scopeValue === 'League Leaders') u.searchParams.delete('div');
+    else u.searchParams.set('div', scopeValue);
+    if (currentArea && currentArea !== 'spm') u.searchParams.set('area', currentArea);
+    else u.searchParams.delete('area');
+    if (currentSession) u.searchParams.set('session', currentSession);
+    window.history.replaceState(null, '', u.toString());
+  } catch (e) { /* URL is a convenience; never let it break the board */ }
+}
+/* Match a ?div= value to a scope: exact scope name, case-insensitively, or a
+   division_number belonging to a group. Returns the canonical scope name or
+   null. 'league' / 'league leaders' → League Leaders. */
+function scopeFromParam(param) {
+  if (!param) return null;
+  var want = String(param).trim().toLowerCase();
+  if (want === 'league' || want === 'league leaders') return 'League Leaders';
+  var byName = scopeOptions.filter(function (o) { return o.value.toLowerCase() === want; })[0];
+  if (byName) return byName.value;
+  var byNum = scopeGroups.filter(function (g) { return g.divNums.has(param) || g.divNums.has(want); })[0];
+  return byNum ? byNum.name : null;
 }
 function toggleScopeList() {
   var list = document.getElementById('scopeList');
@@ -1149,7 +1196,12 @@ async function loadSessions() {
       opt.textContent = s.name;
       sel.appendChild(opt);
     });
-    var def = sessions.filter(function (s) { return s.is_current; })[0]
+    /* ?session= from a shared link wins, if it's a session that has data;
+       otherwise the current session, else the newest. */
+    var urlSid = null;
+    try { urlSid = parseInt(new URLSearchParams(window.location.search).get('session'), 10); } catch (e) {}
+    var def = (urlSid && sessions.filter(function (s) { return s.id === urlSid; })[0])
+            || sessions.filter(function (s) { return s.is_current; })[0]
             || sessions[0];
     if (def) { sel.value = def.id; currentSession = def.id; }
   } catch (e) {
@@ -1167,10 +1219,24 @@ async function loadSession(sessionId, isRefresh) {
       'sp_reports?session_id=eq.' + sessionId + '&operator_id=eq.' + OPERATOR_ID +
       '&report_kind=eq.bd&select=id,week_no,source_printed_at,data_through&order=uploaded_at.desc&limit=1');
 
-    /* All SPM + CRA divisions for the session; applyArea slices it. */
-    allDivisions = await sbGet('slate',
+    /* All SPM + CRA divisions for the session; applyArea slices it.
+       `id` is fetched so we can count teams per division and drop the ones
+       that are not running — a division dropped for the session keeps its row
+       (with a stale num_teams) but has ZERO teams, and it was showing in the
+       picker as a selectable division with no leaders. Team count, not
+       num_teams (which is the OLD expected size), is the "is it running" test;
+       and not "has performance rows" either, or a division that simply hasn't
+       played yet would vanish. */
+    var rawDivisions = await sbGet('slate',
       'divisions?session_id=eq.' + sessionId +
-      '&select=division_number,name,format,night_of_play,operator_id&order=division_number');
+      '&select=id,division_number,name,format,night_of_play,operator_id&order=division_number');
+    var divIds = rawDivisions.map(function (d) { return d.id; });
+    var teamRows = divIds.length
+      ? await sbGetAll('slate', 'teams?division_id=in.(' + divIds.join(',') + ')&select=division_id')
+      : [];
+    var teamCountByDivId = {};
+    teamRows.forEach(function (t) { teamCountByDivId[t.division_id] = (teamCountByDivId[t.division_id] || 0) + 1; });
+    allDivisions = rawDivisions.filter(function (d) { return (teamCountByDivId[d.id] || 0) > 0; });
     _operatorByDivNum = {};
     allDivisions.forEach(function (d) {
       _operatorByDivNum[d.division_number] = d.operator_id;
@@ -1219,10 +1285,19 @@ async function applyArea(areaKey) {
   scopeGroups = buildScopeGroups();
   buildScopeOptions();
 
+  /* A ?div= from the page URL wins on first load only — resolved here, after
+     scope options exist, then cleared so later area/session changes don't keep
+     yanking back to it. */
+  if (_pendingUrlScope) {
+    var resolved = scopeFromParam(_pendingUrlScope);
+    _pendingUrlScope = null;
+    if (resolved) scopeValue = resolved;
+  }
   /* Keep the current scope if it still exists in the new area; otherwise
      fall back to League. */
   var stillValid = scopeOptions.some(function (o) { return o.value === scopeValue; });
   if (!stillValid) scopeValue = 'League Leaders';
+  syncScopeToUrl();
   var opt = scopeOptions.filter(function (o) { return o.value === scopeValue; })[0]
           || scopeOptions[0];
   if (opt) updateScopeBtn(opt);
@@ -1440,11 +1515,40 @@ document.addEventListener('DOMContentLoaded', async function () {
     handleLookup();
   });
 
-  /* Restore saved area before loading data so the first paint is correct. */
+  /* Copy-link button — writes the current shareable URL to the clipboard. */
+  var copyBtn = document.getElementById('copyLinkBtn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', function () {
+      syncScopeToUrl();
+      var url = window.location.href;
+      var done = function () {
+        copyBtn.classList.add('copied');
+        var was = copyBtn.textContent; copyBtn.textContent = '✓ Copied';
+        setTimeout(function () { copyBtn.classList.remove('copied'); copyBtn.textContent = was; }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, function () { window.prompt('Copy this link:', url); });
+      } else { window.prompt('Copy this link:', url); }
+    });
+  }
+
+  /* URL params seed the first load: ?area= and ?session= set the selectors,
+     ?div= is stashed for applyArea to resolve once the scope options exist.
+     A URL value beats sessionStorage — a shared link should land where it
+     points, not where this browser last was. */
+  var urlParams;
+  try { urlParams = new URLSearchParams(window.location.search); } catch (e) { urlParams = null; }
+  var urlArea = urlParams && urlParams.get('area');
+  var urlDiv  = urlParams && urlParams.get('div');
+  if (urlDiv) _pendingUrlScope = urlDiv;
+
+  /* Restore saved area before loading data so the first paint is correct.
+     ?area= overrides the saved one. */
   try {
     var savedArea = sessionStorage.getItem('sharpshooters_area');
     if (savedArea && AREAS[savedArea]) currentArea = savedArea;
   } catch (e) {}
+  if (urlArea && AREAS[urlArea]) currentArea = urlArea;
   if (areaSel) areaSel.value = currentArea;
 
   await loadSessions();
