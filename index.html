@@ -461,7 +461,7 @@
          TABLET OVERRIDES  (768px – 1199px)
          ================================================================ */
 
-      @media (min-width: 768px) and (max-width: 1199px) {
+      @media (min-width: 768px) and (max-width: 899px) {
         body { background: #e8e8e8; }
 
         .page {
@@ -505,10 +505,13 @@
       }
 
       /* ================================================================
-         DESKTOP OVERRIDES  (>= 1200px)
+         DESKTOP OVERRIDES  (>= 900px)
+         Lowered from 1200px so scaled/laptop desktops (which report < 1200
+         CSS px) still get the 2-column grid instead of the stacked tablet
+         layout. The desktop page caps at 900px, so 2 columns stay comfortable.
          ================================================================ */
 
-      @media (min-width: 1200px) {
+      @media (min-width: 900px) {
         body { background: #e8e8e8; }
 
         .page {
@@ -729,7 +732,7 @@
 
 /* ── App identity ── */
 const APP_NAME    = 'SharpShooters';
-const APP_VERSION = '1.7';
+const APP_VERSION = '1.8';
 
 /* ── Supabase ── */
 const SB_URL  = 'https://dqzbekoaysgaiqljueac.supabase.co';
