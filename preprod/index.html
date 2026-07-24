@@ -730,9 +730,17 @@
    for a version bump, poll sp_reports for new uploads and re-render.
    ══════════════════════════════════════════════════════════════════════ */
 
-/* ── App identity ── */
-const APP_NAME    = 'SharpShooters';
-const APP_VERSION = '1.8';
+/* ── App identity ──
+   Preprod isolation (canonical pattern, mirrors Slate): the page detects its
+   environment from the URL path. Served at /sharpshooters/ → prod, polls the
+   'SharpShooters' apps row. Served at /sharpshooters/preprod/ → preprod, polls
+   'SharpShooters-preprod'. Each env's auto-updater watches only its own row,
+   so staging a preprod change never triggers an "Updating" reload in prod.
+   promote.sh copies preprod/* over root and syncs the prod row on promote. */
+const APP_NAME_BASE = 'SharpShooters';
+const IS_PREPROD    = /\/preprod\//.test(location.pathname);
+const APP_NAME      = IS_PREPROD ? APP_NAME_BASE + '-preprod' : APP_NAME_BASE;
+const APP_VERSION   = '1.8';
 
 /* ── Supabase ── */
 const SB_URL  = 'https://dqzbekoaysgaiqljueac.supabase.co';
