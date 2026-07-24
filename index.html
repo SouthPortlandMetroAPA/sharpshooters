@@ -729,7 +729,7 @@
 
 /* ── App identity ── */
 const APP_NAME    = 'SharpShooters';
-const APP_VERSION = '1.6';
+const APP_VERSION = '1.7';
 
 /* ── Supabase ── */
 const SB_URL  = 'https://dqzbekoaysgaiqljueac.supabase.co';
@@ -1113,7 +1113,8 @@ function buildScopeList() {
 /* ── Direct links (v1.6) ──────────────────────────────────────────────────
    Every view is now addressable by URL, so a division leaderboard can be
    shared or bookmarked. ?div=<name> selects a division scope, ?div=league the
-   League Leaders view; ?area= and ?session= carry the other two selectors.
+   League Leaders view; ?area= and ?season=<fall|spring|summer>&year=<yyyy>
+   carry the other two selectors (a legacy ?session=<id> is still read).
    The URL is kept in step as the operator navigates (replaceState, so it does
    not spam browser history), and the 🔗 button copies the current one. */
 function syncScopeToUrl() {
@@ -1123,7 +1124,17 @@ function syncScopeToUrl() {
     else u.searchParams.set('div', scopeValue);
     if (currentArea && currentArea !== 'spm') u.searchParams.set('area', currentArea);
     else u.searchParams.delete('area');
-    if (currentSession) u.searchParams.set('session', currentSession);
+    /* Session is addressed by season+year, not the opaque id — a shared link
+       reads as ?season=fall&year=2026. The legacy ?session= is never written. */
+    u.searchParams.delete('session');
+    var sObj = sessions && sessions.filter(function (s) { return s.id === currentSession; })[0];
+    if (sObj && sObj.season && sObj.year) {
+      u.searchParams.set('season', String(sObj.season).toLowerCase());
+      u.searchParams.set('year', sObj.year);
+    } else {
+      u.searchParams.delete('season');
+      u.searchParams.delete('year');
+    }
     window.history.replaceState(null, '', u.toString());
   } catch (e) { /* URL is a convenience; never let it break the board */ }
 }
@@ -1182,7 +1193,7 @@ async function loadSessions() {
   var sel = document.getElementById('sessionSelect');
   try {
     var all = await sbGet('slate',
-      'sessions?select=id,name,start_date,is_current&order=start_date.desc');
+      'sessions?select=id,name,start_date,is_current,season,year&order=start_date.desc');
     var reps = await sbGet('slate',
       'sp_reports?operator_id=eq.' + OPERATOR_ID + '&select=session_id');
     var withData = {};
@@ -1196,11 +1207,21 @@ async function loadSessions() {
       opt.textContent = s.name;
       sel.appendChild(opt);
     });
-    /* ?session= from a shared link wins, if it's a session that has data;
-       otherwise the current session, else the newest. */
-    var urlSid = null;
-    try { urlSid = parseInt(new URLSearchParams(window.location.search).get('session'), 10); } catch (e) {}
-    var def = (urlSid && sessions.filter(function (s) { return s.id === urlSid; })[0])
+    /* ?season=<fall|spring|summer>&year=<yyyy> from a shared link win, if they
+       name a session that has data. A legacy ?session=<id> is still honored so
+       old bookmarks don't break. Otherwise the current session, else newest. */
+    var params = null;
+    try { params = new URLSearchParams(window.location.search); } catch (e) {}
+    var wantSeason = params ? (params.get('season') || '').trim().toLowerCase() : '';
+    var wantYear   = params ? parseInt(params.get('year'), 10) : NaN;
+    var legacySid  = params ? parseInt(params.get('session'), 10) : NaN;
+    var bySeason = (wantSeason && wantYear)
+      ? sessions.filter(function (s) {
+          return String(s.season || '').toLowerCase() === wantSeason && s.year === wantYear;
+        })[0]
+      : null;
+    var def = bySeason
+            || (legacySid && sessions.filter(function (s) { return s.id === legacySid; })[0])
             || sessions.filter(function (s) { return s.is_current; })[0]
             || sessions[0];
     if (def) { sel.value = def.id; currentSession = def.id; }
