@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SharpShooters API — South Portland Metro APA</title>
+<meta name="description" content="Read-only public API for South Portland Metro APA league leaderboard data. No key required. Keyed by season + year.">
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --ink:#17181c; --mut:#616875; --line:#e6e8ec;
+    --acc:#b3121f; --acc2:#0b5cad; --code:#f1f3f6; --chip:#eef1f5;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--bg:#0e1014; --card:#171a21; --ink:#e9ebef; --mut:#9aa1ac; --line:#282d38; --acc:#ef5661; --acc2:#5aa2e6; --code:#11141a; --chip:#1c2029;}
+  }
+  :root[data-theme="light"]{--bg:#f6f7f9;--card:#fff;--ink:#17181c;--mut:#616875;--line:#e6e8ec;--acc:#b3121f;--acc2:#0b5cad;--code:#f1f3f6;--chip:#eef1f5;}
+  :root[data-theme="dark"]{--bg:#0e1014;--card:#171a21;--ink:#e9ebef;--mut:#9aa1ac;--line:#282d38;--acc:#ef5661;--acc2:#5aa2e6;--code:#11141a;--chip:#1c2029;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:30px 20px 72px}
+  header{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  h1{font-size:1.75rem;margin:0;letter-spacing:-0.01em}
+  .v{font-size:0.8rem;color:var(--mut);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+  .lede{color:var(--mut);margin:8px 0 0;max-width:60ch}
+  a{color:var(--acc2);text-decoration:none}a:hover{text-decoration:underline}
+  h2{font-size:1.02rem;margin:32px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);letter-spacing:.01em}
+  code{font:0.86em ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);padding:1.5px 6px;border-radius:5px;word-break:break-word}
+  .note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:0 9px 9px 0;padding:12px 15px;color:var(--mut);font-size:0.92rem}
+  .note b{color:var(--ink)}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--mut);font-size:0.92rem;margin:2px 0 0}
+  .flow code{background:var(--chip)}
+  .step{color:var(--acc);font-weight:800}
+  .ep{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:15px 17px;margin:12px 0}
+  .ep-h{display:flex;align-items:center;gap:10px;margin-bottom:2px;flex-wrap:wrap}
+  .m{font-size:0.68rem;font-weight:800;letter-spacing:.06em;background:var(--acc);color:#fff;padding:2px 8px;border-radius:5px}
+  .ep-h code{font-size:0.95rem;background:transparent;padding:0;font-weight:700}
+  .ep p{margin:6px 0 9px;color:var(--mut);font-size:0.92rem}
+  .pill{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-size:0.78rem;margin:2px 4px 2px 0;color:var(--mut)}
+  .ex{margin:0;padding:0;list-style:none}
+  .ex li{margin:5px 0}
+  .ex code{background:var(--code)}
+  .shape{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:14px 16px;overflow-x:auto}
+  .shape pre{margin:0;font:0.82rem ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink)}
+  footer{margin-top:34px;color:var(--mut);font-size:0.88rem;border-top:1px solid var(--line);padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand"><h1>SharpShooters API</h1><span class="v" id="ver">v2</span></div>
+  <p class="lede">Read-only, public league-leaderboard data for the South Portland Metro APA. No key or sign-up. CORS-open, JSON everywhere. Built so ChatGPT or any tool can poll the latest results.</p>
+</header>
+
+<div class="note">
+  Requests are keyed by <b>season + year</b> — e.g. <code>?season=summer&amp;year=2026</code>. Omit both to get the current session automatically. Live data is served from
+  <code>https://sharpshooters.spmapa.workers.dev</code>; this page documents it.<br>
+  Machine-readable spec (import into a ChatGPT custom GPT / Action):
+  <a href="https://sharpshooters.spmapa.workers.dev/openapi.json"><code>/openapi.json</code></a>.
+</div>
+
+<h2>Recommended polling flow</h2>
+<div class="flow">
+  <span><span class="step">1.</span> <a href="https://sharpshooters.spmapa.workers.dev/latest"><code>/latest</code></a> → read <code>season</code> + <code>year</code></span>
+  <span><span class="step">2.</span> <code>/divisions?season=&amp;year=</code> → pick a <code>division_number</code></span>
+  <span><span class="step">3.</span> <code>/sp?division=&amp;season=&amp;year=</code> → the leaders</span>
+</div>
+
+<h2>Endpoints</h2>
+
+<div class="ep">
+  <div class="ep-h"><span class="m">GET</span><code>/latest</code></div>
+  <p>The current session — <code>{ season, year, session_id, name, is_current }</code>.</p>
+  <ul class="ex"><li><a href="https://sharpshooters.spmapa.workers.dev/latest"><code>/latest</code></a></li></ul>
+</div>
+
+<div class="ep">
+  <div class="ep-h"><span class="m">GET</span><code>/sessions</code></div>
+  <p>Every session that has data, newest first. <span class="pill">area=spm · cr · both</span></p>
+  <ul class="ex">
+    <li><a href="https://sharpshooters.spmapa.workers.dev/sessions"><code>/sessions</code></a></li>
+    <li><a href="https://sharpshooters.spmapa.workers.dev/sessions?area=both"><code>/sessions?area=both</code></a></li>
+  </ul>
+</div>
+
+<div class="ep">
+  <div class="ep-h"><span class="m">GET</span><code>/divisions</code></div>
+  <p>Divisions for a season + year (defaults to the latest session). Each: <code>division_number, name, format, night_of_play, num_teams</code>. <span class="pill">season</span><span class="pill">year</span><span class="pill">area</span></p>
+  <ul class="ex">
+    <li><a href="https://sharpshooters.spmapa.workers.dev/divisions"><code>/divisions</code></a></li>
+    <li><a href="https://sharpshooters.spmapa.workers.dev/divisions?season=summer&year=2026"><code>/divisions?season=summer&amp;year=2026</code></a></li>
+    <li><a href="https://sharpshooters.spmapa.workers.dev/divisions?season=spring&year=2026&area=both"><code>/divisions?season=spring&amp;year=2026&amp;area=both</code></a></li>
+  </ul>
+</div>
+
+<div class="ep">
+  <div class="ep-h"><span class="m">GET</span><code>/sp</code></div>
+  <p>SharpShooter (SP) leaders for a division + season + year. Omit <code>division</code> for League Leaders across the whole area. <span class="pill">season</span><span class="pill">year</span><span class="pill">division</span><span class="pill">area</span></p>
+  <ul class="ex">
+    <li><a href="https://sharpshooters.spmapa.workers.dev/sp?season=summer&year=2026"><code>/sp?season=summer&amp;year=2026</code></a> <span style="color:var(--mut);font-size:0.85rem">— League Leaders</span></li>
+    <li><a href="https://sharpshooters.spmapa.workers.dev/sp?division=013&season=summer&year=2026"><code>/sp?division=013&amp;season=summer&amp;year=2026</code></a></li>
+    <li><a href="https://sharpshooters.spmapa.workers.dev/sp?season=spring&year=2026&area=both"><code>/sp?season=spring&amp;year=2026&amp;area=both</code></a></li>
+  </ul>
+</div>
+
+<div class="ep">
+  <div class="ep-h"><span class="m">GET</span><code>/leaders</code></div>
+  <p>Back-compatible alias of <code>/sp</code>. Also accepts <code>session_id</code> and <code>divisions=</code> (comma-separated). Existing callers keep working unchanged.</p>
+  <ul class="ex">
+    <li><a href="https://sharpshooters.spmapa.workers.dev/leaders"><code>/leaders</code></a></li>
+    <li><a href="https://sharpshooters.spmapa.workers.dev/leaders?session_id=2"><code>/leaders?session_id=2</code></a></li>
+    <li><a href="https://sharpshooters.spmapa.workers.dev/leaders?divisions=013,015"><code>/leaders?divisions=013,015</code></a></li>
+  </ul>
+</div>
+
+<h2>Response shape — <code>/sp</code> &amp; <code>/leaders</code></h2>
+<div class="shape"><pre>{
+  "scope":        "Divisions" | "League Leaders",
+  "session":      { "id", "name", "season", "year", "is_current" },
+  "divisions":    ["013", ...] | null,
+  "operator_ids": [1],
+  "report_ids":   [54],
+  "generated_at": "2026-07-24T02:17:26Z",
+  "leaders": [
+    {
+      "code":       "r",
+      "label":      "8-Ball Rackless",
+      "top_count":  7,
+      "leaders":  [ { "name": "First \"Nick\" Last", "count": 7, "member_number": "24415" } ]
+    }
+    // one entry per SP category
+  ]
+}</pre></div>
+
+<h2>Areas</h2>
+<p style="color:var(--mut);font-size:0.92rem"><code>area=spm</code> (South Portland Metro, the default) · <code>area=cr</code> (Columbia River) · <code>area=both</code>. Or pass raw operator IDs: <code>operators=1,2</code>.</p>
+
+<footer>
+  Source of truth: the same computation the
+  <a href="https://southportlandmetroapa.github.io/sharpshooters/">SharpShooters leaderboard</a> renders — verified equal for every division in every session.
+</footer>
+</div>
+<script>
+  // Pull the live api_version so the badge never drifts from the worker.
+  fetch('https://sharpshooters.spmapa.workers.dev/', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j && j.api_version) document.getElementById('ver').textContent = 'v' + j.api_version; })
+    .catch(function () {});
+</script>
+</body>
+</html>
